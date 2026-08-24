@@ -1,0 +1,17 @@
+groups:
+  - name: wasmbox
+    rules:
+      - alert: WasmBoxSandboxTimeoutsHigh
+        expr: increase(wasmbox_sandbox_timeouts_total[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WasmBox sandbox timeouts elevated"
+      - alert: WasmBoxCompileErrorsHigh
+        expr: increase(wasmbox_compile_errors_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WasmBox compile errors elevated"
