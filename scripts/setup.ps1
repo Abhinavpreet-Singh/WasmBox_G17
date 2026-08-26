@@ -14,7 +14,7 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
   Write-Host "==> Starting infra (postgres, prometheus, grafana)"
   docker compose up -d postgres prometheus grafana
 } else {
-  Write-Host "Docker not found — skip infra."
+  Write-Host "Docker not found - skipping optional infrastructure."
 }
 
 Write-Host ""
