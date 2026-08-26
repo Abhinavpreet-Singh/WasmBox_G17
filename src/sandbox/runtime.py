@@ -1,5 +1,4 @@
-"""Wasmtime Store limits, fuel, timeout — Week 1 Day 2+."""
-
+"""Wasmtime Store limits, fuel, timeout."""
 from __future__ import annotations
 
 import os
@@ -8,7 +7,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from wasmtime import Engine, Linker, Module, Store, WasiConfig
+from wasmtime import Config, Engine, Linker, Module, Store, WasiConfig
 
 DEFAULT_EXAMPLES_DIR = Path(__file__).resolve().parents[2] / "plugins" / "examples"
 
