@@ -33,7 +33,25 @@ export default function Playground() {
       setLoading(false);
     }
   };
+  const handleRunHello = async () => {
+    setLoading(true);
+    setError(null);
 
+    try {
+      const data = await apiPost('/api/run/wasm', {
+        artifact: 'hello.wasm',
+        stdin: '',
+      });
+
+      setResult(data);
+      setExecutions((prev) => [data, ...prev].slice(0, 20));
+    } catch (e) {
+      setError(e.message);
+      setResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <PageLayout>
       <PageBody className="!p-0 flex flex-col">
@@ -45,6 +63,14 @@ export default function Playground() {
             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {loading ? 'Running…' : 'Run (stub)'}
+          </button>
+          <button
+            type="button"
+            onClick={handleRunHello}
+            disabled={loading}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-50"
+          >
+            {loading ? 'Running...' : 'Run hello.wasm'}
           </button>
           <span className="text-[10px] text-neutral-400 font-mono">Compile → Week 2 Day 7</span>
         </div>
@@ -66,7 +92,17 @@ export default function Playground() {
           <div className="p-4 font-mono text-xs overflow-auto bg-neutral-900 text-neutral-100 min-h-[200px]">
             {error && <p className="text-rose-400 mb-2">{error}</p>}
             {result ? (
-              <pre className="whitespace-pre-wrap">{JSON.stringify(result, null, 2)}</pre>
+              <div className="space-y-4">
+                <div>
+                  <p className="mb-1 text-neutral-400">stdout</p>
+                  <pre className="whitespace-pre-wrap">
+                    {result.stdout || '(no stdout)'}
+                  </pre>
+                </div>
+                <p className="text-neutral-400">
+                  Duration: {result.duration_ms} ms
+                </p>
+              </div>
             ) : (
               <p className="text-neutral-500">Output appears here after Run.</p>
             )}
