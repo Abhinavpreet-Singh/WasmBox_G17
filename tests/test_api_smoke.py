@@ -1,15 +1,12 @@
-import httpx
+from fastapi.testclient import TestClient
+
+from src.api.main import app
 
 
 def test_health():
-    """Smoke test — run API locally on :8001 before pytest."""
-    try:
-        r = httpx.get("http://localhost:8001/health", timeout=2.0)
-    except httpx.ConnectError:
-        import pytest
-
-        pytest.skip("API not running on :8001")
-    assert r.status_code == 200
-    body = r.json()
+    client = TestClient(app)
+    response = client.get("/health")
+    assert response.status_code == 200
+    body = response.json()
     assert body["status"] == "ok"
     assert body["service"] == "wasmbox"

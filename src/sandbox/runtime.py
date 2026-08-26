@@ -1,4 +1,5 @@
-"""Wasmtime Store limits, fuel, timeout."""
+"""Wasmtime Store limits, fuel, timeout — Week 1 Day 2+."""
+
 from __future__ import annotations
 
 import os
@@ -9,7 +10,11 @@ from pathlib import Path
 
 from wasmtime import Config, Engine, Linker, Module, Store, WasiConfig
 
+from src.metrics.prometheus import record_sandbox_oom, record_sandbox_timeout
+
 DEFAULT_EXAMPLES_DIR = Path(__file__).resolve().parents[2] / "plugins" / "examples"
+DEFAULT_FUEL = 1_000_000
+DEFAULT_MEMORY_BYTES = 16 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -35,6 +40,26 @@ def resolve_artifact_path(artifact: str, *, base_dir: Path | None = None) -> Pat
     return path
 
 
+def _create_engine() -> Engine:
+    config = Config()
+    config.consume_fuel = True
+    return Engine(config)
+
+
+def _create_store(engine: Engine) -> Store:
+    store = Store(engine)
+    store.set_limits(memory_size=DEFAULT_MEMORY_BYTES)
+    store.set_fuel(DEFAULT_FUEL)
+    return store
+
+
+def _classify_trap(error_detail: str) -> str:
+    lower = error_detail.lower()
+    if "fuel" in lower or "epoch" in lower:
+        return "timeout"
+    return "error"
+
+
 def run_wasm(
     artifact: str,
     *,
@@ -58,12 +83,13 @@ def run_wasm(
         if stdin:
             config.stdin_file = stdin_path
 
-        linker = Linker(Engine())
+        engine = _create_engine()
+        linker = Linker(engine)
         linker.define_wasi()
-        store = Store(linker.engine)
+        store = _create_store(engine)
         store.set_wasi(config)
 
-        module = Module.from_file(linker.engine, str(wasm_path))
+        module = Module.from_file(engine, str(wasm_path))
         instance = linker.instantiate(store, module)
         start = instance.exports(store).get("_start")
         if start is None:
@@ -74,12 +100,16 @@ def run_wasm(
         try:
             start(store)
         except Exception as exc:  # noqa: BLE001 — surface sandbox failures to API layer
-            status = "error"
             error_detail = str(exc)
+            status = _classify_trap(error_detail)
+            if status == "timeout":
+                record_sandbox_timeout()
+            elif "memory" in error_detail.lower() or "out of memory" in error_detail.lower():
+                record_sandbox_oom()
 
         stdout_text = Path(stdout_path).read_text(encoding="utf-8")
         stderr_text = Path(stderr_path).read_text(encoding="utf-8")
-        if status == "error" and error_detail and not stderr_text:
+        if status != "ok" and error_detail and not stderr_text:
             stderr_text = error_detail
 
     duration_ms = int((time.perf_counter() - started) * 1000)
