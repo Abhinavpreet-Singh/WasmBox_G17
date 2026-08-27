@@ -67,6 +67,25 @@ export default function Playground() {
       setLoading(false);
     }
   };
+  const handleRunInfinite = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await apiPost('/api/run/wasm', {
+        artifact: 'infinite_loop',
+        stdin: '',
+      });
+
+      setResult(data);
+      setExecutions((prev) => [data, ...prev].slice(0, 20));
+    } catch (e) {
+      setError(e.message);
+      setResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <PageLayout>
       <PageBody className="!p-0 flex flex-col">
@@ -96,6 +115,15 @@ export default function Playground() {
             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-50"
           >
             {loading ? 'Running...' : 'Run hello.wasm'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleRunInfinite}
+            disabled={loading}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-rose-600 text-white hover:bg-rose-500 disabled:opacity-50"
+          >
+            {loading ? 'Running...' : 'Run infinite_loop.wasm'}
           </button>
         </div>
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200">
