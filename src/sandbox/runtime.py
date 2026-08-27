@@ -87,9 +87,11 @@ def run_wasm(
         wasm_config = Config()
         wasm_config.consume_fuel = True
         wasm_config.epoch_interruption = True
+        wasm_config.static_memory_maximum_size = 64 * 1024 * 1024
 
         engine = Engine(wasm_config)
         linker = Linker(engine)
+        linker.define_wasi()
         store = Store(linker.engine)
         store.set_fuel(100_000)
         store.set_epoch_deadline(1)
