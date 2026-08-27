@@ -33,6 +33,21 @@ export default function Playground() {
       setLoading(false);
     }
   };
+  const handleCompile = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await apiPost('/api/compile', { source });
+      setResult(data);
+    } catch (e) {
+      setError(e.message);
+      setResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRunHello = async () => {
     setLoading(true);
     setError(null);
@@ -62,8 +77,18 @@ export default function Playground() {
             disabled={loading}
             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
-            {loading ? 'Running…' : 'Run (stub)'}
+            {loading ? 'Running...' : 'Run (stub)'}
           </button>
+
+          <button
+            type="button"
+            onClick={handleCompile}
+            disabled={loading}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
+          >
+            {loading ? 'Compiling...' : 'Compile (stub)'}
+          </button>
+
           <button
             type="button"
             onClick={handleRunHello}
@@ -72,7 +97,6 @@ export default function Playground() {
           >
             {loading ? 'Running...' : 'Run hello.wasm'}
           </button>
-          <span className="text-[10px] text-neutral-400 font-mono">Compile → Week 2 Day 7</span>
         </div>
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200">
           <div className="min-h-[280px] lg:min-h-0">
