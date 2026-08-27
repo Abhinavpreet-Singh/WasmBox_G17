@@ -89,7 +89,7 @@ export default function Playground() {
   return (
     <PageLayout>
       <PageBody className="!p-0 flex flex-col">
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-neutral-200 bg-white shrink-0">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-neutral-200 bg-white shrink-0">
           <button
             type="button"
             onClick={handleRun}
