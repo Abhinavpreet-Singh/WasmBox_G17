@@ -14,8 +14,10 @@ OOM_TOTAL = Counter(
 
 
 def record_sandbox_timeout() -> None:
+    """Increment the counter when a WASM execution times out."""
     SANDBOX_TIMEOUTS.inc()
 
 
 def record_sandbox_oom() -> None:
+    """Increment the counter when a WASM execution hits the memory limit."""
     OOM_TOTAL.inc()
