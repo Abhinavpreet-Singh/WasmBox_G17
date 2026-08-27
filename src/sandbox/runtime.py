@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import tempfile
 import time
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -58,9 +59,19 @@ def run_wasm(
         if stdin:
             config.stdin_file = stdin_path
 
-        linker = Linker(Engine())
-        linker.define_wasi()
+        wasm_config = Config()
+        wasm_config.consume_fuel = True
+        wasm_config.epoch_interruption = True
+
+        engine = Engine(wasm_config)
+        linker = Linker(engine)
         store = Store(linker.engine)
+        store.set_fuel(100_000)
+        store.set_epoch_deadline(1)
+
+        timer = threading.Timer(0.05, engine.increment_epoch)
+        timer.start()
+
         store.set_wasi(config)
 
         module = Module.from_file(linker.engine, str(wasm_path))
