@@ -146,13 +146,23 @@ export default function Playground() {
             {result ? (
               <div className="space-y-4">
                 <div>
+                  <p className="mb-1 text-neutral-400">status</p>
+                  <p className="text-white">{result.status || '(no status)'}</p>
+                </div>
+                <div>
                   <p className="mb-1 text-neutral-400">stdout</p>
                   <pre className="whitespace-pre-wrap">
                     {result.stdout || '(no stdout)'}
                   </pre>
                 </div>
+                <div>
+                  <p className="mb-1 text-neutral-400">stderr</p>
+                  <pre className="whitespace-pre-wrap text-rose-300">
+                    {result.stderr || '(no stderr)'}
+                  </pre>
+                </div>
                 <p className="text-neutral-400">
-                  Duration: {result.duration_ms} ms
+                  Duration: {result.duration_ms ?? '—'} ms
                 </p>
               </div>
             ) : (
