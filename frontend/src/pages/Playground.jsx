@@ -40,6 +40,7 @@ export default function Playground() {
     try {
       const data = await apiPost('/api/compile', { source });
       setResult(data);
+      setExecutions((prev) => [data, ...prev].slice(0, 20));
     } catch (e) {
       setError(e.message);
       setResult(null);
@@ -149,10 +150,10 @@ export default function Playground() {
                   <p className="mb-1 text-neutral-400">status</p>
                   <span
                     className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${result.status === 'ok'
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : result.status === 'timeout'
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-neutral-100 text-neutral-700'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : result.status === 'timeout'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-neutral-100 text-neutral-700'
                       }`}
                   >
                     {result.status || '(no status)'}
