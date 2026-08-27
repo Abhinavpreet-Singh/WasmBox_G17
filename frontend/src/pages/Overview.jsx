@@ -35,11 +35,45 @@ export default function Overview() {
             {executions.length === 0 ? (
               <p className="text-sm text-neutral-400">No executions yet. Compile and run a plugin.</p>
             ) : (
-              <ul className="text-sm font-mono text-neutral-600 space-y-1">
-                {executions.map((ex, i) => (
-                  <li key={i}>{JSON.stringify(ex)}</li>
-                ))}
-              </ul>
+              <div className="overflow-x-auto rounded-lg border border-neutral-200">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
+                    <tr>
+                      <th className="px-3 py-2 font-semibold">Status</th>
+                      <th className="px-3 py-2 font-semibold">Artifact</th>
+                      <th className="px-3 py-2 font-semibold">Duration</th>
+                      <th className="px-3 py-2 font-semibold">Output</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200">
+                    {executions.map((ex, i) => (
+                      <tr key={i} className="text-neutral-700">
+                        <td className="px-3 py-2">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${ex.status === 'ok'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : ex.status === 'timeout'
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-neutral-100 text-neutral-700'
+                              }`}
+                          >
+                            {ex.status || 'unknown'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 font-mono">
+                          {ex.artifact || ex.artifact_id || '—'}
+                        </td>
+                        <td className="px-3 py-2 font-mono">
+                          {ex.duration_ms ?? '—'} ms
+                        </td>
+                        <td className="max-w-md truncate px-3 py-2 font-mono">
+                          {ex.stdout || ex.message || ex.stderr || '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         </div>
