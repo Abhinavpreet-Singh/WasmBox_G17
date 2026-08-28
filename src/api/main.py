@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.routes.compile import router as compile_router
 from src.api.routes.health import router as health_router
 from src.api.routes.run import router as run_router
+from src.api.routes.lint import router as lint_router
 
 
 @asynccontextmanager
@@ -34,3 +35,4 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(compile_router)
 app.include_router(run_router)
+app.include_router(lint_router)
