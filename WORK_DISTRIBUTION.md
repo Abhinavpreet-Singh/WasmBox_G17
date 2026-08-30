@@ -1,6 +1,6 @@
 # WasmBox — Team Task Board
 
-**Updated:** 2026-08-29 (Week 2 · Day 6/7)  
+**Updated:** 2026-08-30 (Week 2 · Day 7/8)  
 **Repo:** `WasmBox_G17` · branch per person below
 
 ---
@@ -9,53 +9,53 @@
 
 | Day | Focus | Status |
 |-----|-------|--------|
-| 1–3 | Bootstrap, WASM run, limits | Done |
-| 4–5 | UI shell, Playground stubs | Done (Simin) |
+| 1–5 | Foundation + Playground | Done |
 | 6 | AST guard + `POST /api/lint` | Done (Shifana) |
-| 6/7 | Compile guard + compiler client | In progress (Abhinavpreet) |
-| 7 | Real Docker compile → `.wasm` | Started — needs Docker image build |
+| 7 | Docker compile → `artifacts/*.wasm` | Done — needs `docker compose build compiler` |
+| 8 | `POST /api/run` compile → Extism execute | Done (Abhinavpreet) |
+| 9 | WebSocket live stdout | Next |
 
-**Tests:** 12+ passing · **Next gate:** Mid Review (Day 10) — compile → run → stdout in UI
+**Tests:** 20+ passing · **Next gate:** Mid Review (Day 10)
 
 ---
 
 ## Abhinavpreet Singh Arora (Lead) — `Abhinavpreet`
 
-1. Merge latest `main`, finish `compiler_client.py` + real `POST /api/compile` flow (guard → Docker → SHA-256).
-2. Build compiler image: `docker compose build compiler` and verify `hello_plugin.py` compiles to `artifacts/*.wasm`.
-3. Wire `POST /api/run` to load compiled artifacts from `artifacts/` (Day 8 run pipeline start).
-4. Add `GET /metrics` route exposing Prometheus counters from `src/metrics/prometheus.py`.
-5. Review + merge open PRs from Simin, Shifana, and Surya; keep `main` green.
+1. Build + verify compiler image: `docker compose build compiler` then compile `hello_plugin.py`.
+2. E2E smoke: `POST /api/compile` → `POST /api/run` with `artifact_id` → stdout in API.
+3. Day 9: implement `/ws/executions` WebSocket streaming in `src/api/websocket.py`.
+4. Day 10: polish `Overview.jsx` executions table with fingerprint prefix + status.
+5. Review team PRs; update `docs/architecture.md` for Mid Review demo script.
 
 ---
 
 ## Shifana Parveen R — `Shifana`
 
-1. `git merge main` — sync AST guard + compile changes from lead.
-2. Expand `tests/test_sandbox_security.py` — file read, env leak, subprocess attempts (Week 3 Day 11 prep).
+1. `git merge main` — sync compile/run pipeline changes.
+2. Expand `tests/test_sandbox_security.py` — file read, env leak, subprocess attempts.
 3. Stub `src/sandbox/host_functions.py` — `db_query` over in-memory fixture rows.
-4. Add `capabilities.py` flag `ALLOW_DB_BRIDGE` and document in `docs/security-model.md`.
-5. Add compile-error counter stub in `src/metrics/prometheus.py` (`wasmbox_compile_errors_total`).
+4. Add `ALLOW_DB_BRIDGE` capability flag in `capabilities.py` + security docs.
+5. Wire `wasmbox_compile_errors_total` increment tests in compile error paths.
 
 ---
 
 ## Noore Simin — `simin`
 
-1. `git merge main` — pull latest compile + lint API changes.
-2. Add **Lint** button in `Playground.jsx` → `POST /api/lint`; show violations panel under Monaco.
-3. Add Monaco **error markers** on violation `line` / `col` from lint response.
-4. On **Compile** when `status === "blocked"`, render violations list (not just generic error).
-5. Add **compilation log panel** (show `compiler_log` from compile response) — Day 7 UI.
+1. `git merge main` — pull compile/run + metrics API.
+2. Add **Lint** button → `POST /api/lint`; violations panel under Monaco.
+3. Monaco error markers on violation `line` / `col`.
+4. Update **Compile** button label (remove "stub"); show `wasm_sha256` + `compiler_log`.
+5. Wire **Run** button to `POST /api/run` with editor `source` (full compile → run E2E).
 
 ---
 
 ## Surya Sankar — `Surya`
 
-1. Create branch from `main`: `git checkout -b Surya` (branch is currently at scaffold only).
-2. Implement `src/api/routes/metrics.py` — mount `GET /metrics` with `prometheus_client.generate_latest()`.
-3. Build `Metrics.jsx` stat cards — parse `wasmbox_sandbox_timeouts_total`, `wasmbox_oom_total` from `/metrics`.
-4. Scaffold `Operations.jsx` — sandbox health summary + placeholder violations table.
-5. Draft `docs/architecture.md` data-flow section (compile → guard → WASM → run).
+1. Create branch from `main`: `git checkout -b Surya`.
+2. Build `Metrics.jsx` stat cards from live `GET /metrics` (timeouts, OOM, compile errors).
+3. Scaffold `Operations.jsx` — sandbox health + violations placeholder table.
+4. Add auto-refresh (30s) on Metrics page using `lib/observability.js`.
+5. Draft `docs/architecture.md` compile → guard → WASM → run section.
 
 ---
 
@@ -65,9 +65,9 @@
 git fetch --all
 git checkout <your-branch>
 git merge main
-# work only in your assigned files
-pytest   # backend
-cd frontend && npm run dev   # frontend on :5174
+pytest
+cd frontend && npm run dev   # :5174
+uvicorn src.api.main:app --port 8001 --reload
 ```
 
 **Ports:** API `8001` · Vite `5174` · Grafana `3002` · Prometheus `9091`

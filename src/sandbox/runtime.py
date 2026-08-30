@@ -14,6 +14,7 @@ from wasmtime import Config, Engine, Linker, Module, Store, WasiConfig
 from src.metrics.prometheus import record_sandbox_oom, record_sandbox_timeout
 
 DEFAULT_EXAMPLES_DIR = Path(__file__).resolve().parents[2] / "plugins" / "examples"
+ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "artifacts"
 DEFAULT_FUEL = 1_000_000
 DEFAULT_MEMORY_BYTES = 16 * 1024 * 1024
 
@@ -38,6 +39,20 @@ def resolve_artifact_path(artifact: str, *, base_dir: Path | None = None) -> Pat
         raise ValueError("artifact path escapes examples directory")
     if not path.is_file():
         raise FileNotFoundError(f"WASM artifact not found: {name}")
+    return path
+
+
+def resolve_compiled_artifact(artifact_id: str) -> Path:
+    """Resolve a compiled WASM artifact under artifacts/ by id or filename."""
+    base = ARTIFACTS_DIR.resolve()
+    name = Path(artifact_id).name
+    if not name.endswith(".wasm"):
+        name = f"{name}.wasm"
+    path = (base / name).resolve()
+    if base not in path.parents and path != base:
+        raise ValueError("artifact path escapes artifacts directory")
+    if not path.is_file():
+        raise FileNotFoundError(f"Compiled artifact not found: {name}")
     return path
 
 
