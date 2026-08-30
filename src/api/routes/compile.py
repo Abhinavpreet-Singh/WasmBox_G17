@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 
 from fastapi import APIRouter
 
+from src.metrics.prometheus import record_compile_error
 from src.sandbox.ast_guard import lint_source
 from src.sandbox.compiler_client import CompilerError, compile_python
 
@@ -49,6 +50,7 @@ def compile_plugin(body: CompileRequest) -> CompileResult:
     try:
         artifact = compile_python(body.source)
     except CompilerError as exc:
+        record_compile_error()
         return CompileResult(
             status="error",
             message=str(exc),

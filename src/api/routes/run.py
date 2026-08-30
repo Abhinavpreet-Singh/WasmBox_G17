@@ -2,13 +2,20 @@ from pydantic import BaseModel, Field
 
 from fastapi import APIRouter, HTTPException
 
-from src.sandbox.runtime import run_wasm
+from src.sandbox.ast_guard import lint_source
+from src.sandbox.compiler_client import CompilerError, compile_python
+from src.sandbox.extism_runtime import run_extism_artifact
+from src.sandbox.runtime import resolve_compiled_artifact, run_wasm
 
 router = APIRouter(prefix="/api", tags=["run"])
 
 
 class RunRequest(BaseModel):
     source: str = ""
+    artifact_id: str = Field(
+        default="",
+        description="Compiled artifact id from POST /api/compile (loads from artifacts/)",
+    )
 
 
 class WasmRunRequest(BaseModel):
@@ -26,6 +33,8 @@ class ExecutionResult(BaseModel):
     duration_ms: int = 0
     message: str = "Stub response — implement Week 2 Day 8"
     artifact: str = ""
+    artifact_id: str = ""
+    wasm_sha256: str = ""
 
 
 @router.post("/run/wasm", response_model=ExecutionResult)
@@ -49,9 +58,56 @@ def run_wasm_artifact(body: WasmRunRequest) -> ExecutionResult:
 
 @router.post("/run", response_model=ExecutionResult)
 def run_plugin(body: RunRequest) -> ExecutionResult:
-    preview = body.source.strip().split("\n")[0][:80] if body.source else ""
+    if body.artifact_id:
+        try:
+            wasm_path = resolve_compiled_artifact(body.artifact_id)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        result = run_extism_artifact(wasm_path)
+        return ExecutionResult(
+            status=result.status,
+            stdout=result.stdout,
+            stderr=result.stderr,
+            duration_ms=result.duration_ms,
+            artifact=result.artifact,
+            artifact_id=body.artifact_id,
+            message="Extism plugin execution complete",
+        )
+
+    if not body.source.strip():
+        return ExecutionResult(
+            status="error",
+            message="Provide source code or artifact_id",
+        )
+
+    violations = lint_source(body.source)
+    if violations:
+        return ExecutionResult(
+            status="blocked",
+            stderr=violations[0].message,
+            message="AST guard rejected source before compile",
+        )
+
+    try:
+        compiled = compile_python(body.source)
+    except CompilerError as exc:
+        return ExecutionResult(
+            status="error",
+            stderr=exc.log or str(exc),
+            message=str(exc),
+        )
+
+    result = run_extism_artifact(compiled.wasm_path)
     return ExecutionResult(
-        status="stub",
-        stdout=f"[stub] Received {len(body.source)} chars. First line: {preview}",
-        message="Connect Wasmtime runtime in Week 2 Day 8",
+        status=result.status,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        duration_ms=result.duration_ms,
+        artifact=result.artifact,
+        artifact_id=compiled.artifact_id,
+        wasm_sha256=compiled.wasm_sha256,
+        message="Compile and run complete",
     )
