@@ -34,8 +34,51 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def docker_available() -> bool:
+    """Return True when the Docker CLI can reach a running daemon."""
+    try:
+        result = subprocess.run(
+            ["docker", "info"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
+def compiler_image_available() -> bool:
+    """Return True when the wasmbox compiler image is built locally."""
+    if not docker_available():
+        return False
+    result = subprocess.run(
+        ["docker", "image", "inspect", COMPILER_IMAGE],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def _docker_volume_path(path: Path) -> str:
+    """Normalize a host path for Docker bind mounts on Windows."""
+    resolved = path.resolve()
+    return resolved.as_posix()
+
+
 def compile_python(source: str, *, artifacts_dir: Path | None = None) -> CompiledArtifact:
     """Compile Python plugin source to WASM via the Dockerized extism-py toolchain."""
+    if not docker_available():
+        raise CompilerError(
+            "Docker is not available. Start Docker Desktop and build wasmbox-compiler:local.",
+        )
+    if not compiler_image_available():
+        raise CompilerError(
+            "Compiler image not found. Run: docker compose build compiler",
+        )
+
     base = (artifacts_dir or ARTIFACTS_DIR).resolve()
     base.mkdir(parents=True, exist_ok=True)
 
@@ -58,9 +101,9 @@ def compile_python(source: str, *, artifacts_dir: Path | None = None) -> Compile
             "run",
             "--rm",
             "-v",
-            f"{base}:/artifacts",
+            f"{_docker_volume_path(base)}:/artifacts",
             "-v",
-            f"{py_path.parent}:/work:ro",
+            f"{_docker_volume_path(py_path.parent)}:/work:ro",
             COMPILER_IMAGE,
             "compile",
             f"/work/{py_path.name}",
@@ -86,10 +129,6 @@ def compile_python(source: str, *, artifacts_dir: Path | None = None) -> Compile
             wasm_sha256=sha256_file(wasm_path),
             compiler_log=log,
         )
-    except FileNotFoundError as exc:
-        raise CompilerError(
-            "Docker is not available. Start Docker Desktop and build wasmbox-compiler:local.",
-        ) from exc
     except subprocess.TimeoutExpired as exc:
         raise CompilerError("Compiler timed out", str(exc)) from exc
     finally:

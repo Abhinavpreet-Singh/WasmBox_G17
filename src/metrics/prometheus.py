@@ -12,6 +12,11 @@ OOM_TOTAL = Counter(
     "WASM executions stopped by memory limits",
 )
 
+COMPILE_ERRORS = Counter(
+    "wasmbox_compile_errors_total",
+    "Plugin compile failures after AST guard",
+)
+
 
 def record_sandbox_timeout() -> None:
     """Increment the counter when a WASM execution times out."""
@@ -21,3 +26,8 @@ def record_sandbox_timeout() -> None:
 def record_sandbox_oom() -> None:
     """Increment the counter when a WASM execution hits the memory limit."""
     OOM_TOTAL.inc()
+
+
+def record_compile_error() -> None:
+    """Increment the counter when compilation fails."""
+    COMPILE_ERRORS.inc()
