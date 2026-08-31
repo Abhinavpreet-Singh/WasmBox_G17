@@ -1,9 +1,11 @@
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-from fastapi import APIRouter, Response
+"""Prometheus metrics endpoint."""
+
+from fastapi import APIRouter
 
 router = APIRouter(tags=["metrics"])
 
 
 @router.get("/metrics")
-def prometheus_metrics() -> Response:
-    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+def metrics() -> dict:
+    # TODO(Day 2): return prometheus_client.generate_latest() as text/plain
+    return {"status": "not_implemented"}
