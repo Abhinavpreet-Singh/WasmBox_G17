@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import PageLayout, { PageBody } from '../components/layout/PageLayout';
 import { apiPost } from '../lib/api';
@@ -19,6 +19,34 @@ export default function Playground() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [violations, setViolations] = useState([]);
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+  const handleEditorMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+  };
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+
+    if (!editor || !monaco) return;
+
+    const markers = violations.map((violation) => ({
+      severity: monaco.MarkerSeverity.Error,
+      startLineNumber: violation.line,
+      startColumn: violation.col,
+      endLineNumber: violation.line,
+      endColumn: violation.col + 1,
+      message: `[${violation.rule}] ${violation.message}`,
+    }));
+
+    monaco.editor.setModelMarkers(
+      editor.getModel(),
+      'wasmbox-lint',
+      markers,
+    );
+  }, [violations]);
 
   const handleRun = async () => {
     setLoading(true);
@@ -156,6 +184,7 @@ export default function Playground() {
             <div className="min-h-[220px] flex-1">
               <Editor
                 height="320px"
+                onMount={handleEditorMount}
                 defaultLanguage="python"
                 value={source}
                 onChange={(v) => setSource(v ?? '')}
