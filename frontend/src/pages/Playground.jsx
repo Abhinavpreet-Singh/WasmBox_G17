@@ -69,6 +69,7 @@ export default function Playground() {
     try {
       const data = await apiPost('/api/compile', { source });
       setResult(data);
+      setViolations(data.violations ?? []);
       setExecutions((prev) => [data, ...prev].slice(0, 20));
     } catch (e) {
       setError(e.message);
@@ -77,6 +78,7 @@ export default function Playground() {
       setLoading(false);
     }
   };
+
 
   const handleLint = async () => {
     setLoading(true);
@@ -196,46 +198,10 @@ export default function Playground() {
                 }}
               />
 
-              <div className="max-h-48 overflow-auto border-t border-neutral-200 bg-white p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-xs font-semibold text-neutral-800">
-                    Violations
-                  </h3>
-                  <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
-                    {violations.length}
-                  </span>
-                </div>
 
-                {violations.length === 0 ? (
-                  <p className="text-xs text-emerald-600">
-                    No violations detected.
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {violations.map((violation, index) => (
-                      <li
-                        key={`${violation.line}-${violation.col}-${violation.rule}-${index}`}
-                        className="rounded-lg border border-rose-200 bg-rose-50 p-2"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded bg-rose-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-rose-700">
-                            {violation.rule}
-                          </span>
-                          <span className="font-mono text-[10px] text-neutral-500">
-                            Line {violation.line}, Col {violation.col}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs text-rose-700">
-                          {violation.message}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
             </div>
 
-            <div className="max-h-48 overflow-auto border-t border-neutral-200 bg-white p-3">
+            <div className="max-h-48 overflow-auto border-t border-neutral-200bg-white p-3">
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-xs font-semibold text-neutral-800">
                   Violations
@@ -320,4 +286,5 @@ export default function Playground() {
       </PageBody>
     </PageLayout>
   );
+
 }
