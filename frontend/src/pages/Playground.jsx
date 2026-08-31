@@ -18,6 +18,7 @@ export default function Playground() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [violations, setViolations] = useState([]);
 
   const handleRun = async () => {
     setLoading(true);
@@ -44,6 +45,21 @@ export default function Playground() {
     } catch (e) {
       setError(e.message);
       setResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLint = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await apiPost('/api/lint', { source });
+      setViolations(data.violations ?? []);
+    } catch (e) {
+      setError(e.message);
+      setViolations([]);
     } finally {
       setLoading(false);
     }
@@ -107,6 +123,14 @@ export default function Playground() {
             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
           >
             {loading ? 'Compiling...' : 'Compile (stub)'}
+          </button>
+          <button
+            type="button"
+            onClick={handleLint}
+            disabled={loading}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-50"
+          >
+            {loading ? 'Linting...' : `Lint (${violations.length})`}
           </button>
 
           <button
