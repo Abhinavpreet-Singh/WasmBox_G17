@@ -27,11 +27,11 @@ class WasmRunRequest(BaseModel):
 
 
 class ExecutionResult(BaseModel):
-    status: str = "stub"
+    status: str = "error"
     stdout: str = ""
     stderr: str = ""
     duration_ms: int = 0
-    message: str = "Stub response — implement Week 2 Day 8"
+    message: str = ""
     artifact: str = ""
     artifact_id: str = ""
     wasm_sha256: str = ""
