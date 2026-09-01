@@ -16,9 +16,6 @@ export default function Overview() {
                 <span className="text-neutral-400"> · {apiHealth.service}</span>
               )}
             </p>
-            <p className="text-xs text-neutral-400 mt-3">
-              Week 1 scaffold — executions table fills in Week 2 Day 10.
-            </p>
           </section>
 
           <section className="rounded-xl border border-neutral-200 bg-white p-5">
@@ -42,6 +39,7 @@ export default function Overview() {
                       <th className="px-3 py-2 font-semibold">Status</th>
                       <th className="px-3 py-2 font-semibold">Artifact</th>
                       <th className="px-3 py-2 font-semibold">Duration</th>
+                      <th className="px-3 py-2 font-semibold">SHA-256</th>
                       <th className="px-3 py-2 font-semibold">Output</th>
                     </tr>
                   </thead>
@@ -65,6 +63,9 @@ export default function Overview() {
                         </td>
                         <td className="px-3 py-2 font-mono">
                           {ex.duration_ms ?? '—'} ms
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs text-neutral-400" title={ex.wasm_sha256 || ''}>
+                          {ex.wasm_sha256 ? ex.wasm_sha256.slice(0, 12) + '…' : '—'}
                         </td>
                         <td className="max-w-md truncate px-3 py-2 font-mono">
                           {ex.stdout || ex.message || ex.stderr || '—'}
