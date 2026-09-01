@@ -201,7 +201,7 @@ export default function Playground() {
 
             </div>
 
-            <div className="max-h-48 overflow-auto border-t border-neutral-200bg-white p-3">
+            <div className="max-h-48 overflow-auto border-t border-neutral-200 bg-white p-3">
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-xs font-semibold text-neutral-800">
                   Violations
@@ -274,6 +274,14 @@ export default function Playground() {
                     {result.stderr || '(no stderr)'}
                   </pre>
                 </div>
+                {result.compiler_log !== undefined && (
+                  <div>
+                    <p className="mb-1 text-neutral-400">compilation log</p>
+                    <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-neutral-700 bg-black p-3 text-neutral-300">
+                      {result.compiler_log || '(No compilation log returned by API.)'}
+                    </pre>
+                  </div>
+                )}
                 <p className="text-neutral-400">
                   Duration: {result.duration_ms ?? '—'} ms
                 </p>
