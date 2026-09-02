@@ -15,6 +15,12 @@ const ATTACK_SCENARIOS = [
     description: 'Attempts to consume execution time without terminating.',
     source: 'while True:\n    pass',
   },
+    {
+    id: 'subprocess-spawn',
+    title: 'Subprocess Spawn',
+    description: 'Attempts to launch an operating-system subprocess.',
+    source: 'import subprocess\nsubprocess.run(["whoami"])',
+  },
 ];
 
 export default function SecurityLab() {
