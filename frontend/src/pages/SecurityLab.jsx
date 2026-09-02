@@ -15,11 +15,17 @@ const ATTACK_SCENARIOS = [
     description: 'Attempts to consume execution time without terminating.',
     source: 'while True:\n    pass',
   },
-    {
+  {
     id: 'subprocess-spawn',
     title: 'Subprocess Spawn',
     description: 'Attempts to launch an operating-system subprocess.',
     source: 'import subprocess\nsubprocess.run(["whoami"])',
+  },
+  {
+    id: 'eval-injection',
+    title: 'Eval Injection',
+    description: 'Attempts to execute dynamically injected Python code.',
+    source: 'eval(\'__import__("os").system("whoami")\')',
   },
 ];
 
