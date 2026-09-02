@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 from fastapi import APIRouter, HTTPException
 
-from src.metrics.prometheus import record_execution
+from src.metrics.prometheus import record_compile_error, record_execution
 from src.sandbox.ast_guard import lint_source
 from src.sandbox.compiler_client import CompilerError, compile_python
 from src.sandbox.extism_runtime import run_extism_artifact
@@ -117,6 +117,8 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
     try:
         compiled = compile_python(body.source)
     except CompilerError as exc:
+        record_compile_error()
+
         return ExecutionResult(
             status="error",
             stderr=exc.log or str(exc),

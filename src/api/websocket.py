@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from src.metrics.prometheus import record_execution
+from src.metrics.prometheus import record_compile_error, record_execution
 from src.sandbox.ast_guard import lint_source
 from src.sandbox.compiler_client import CompilerError, compile_python
 from src.sandbox.extism_runtime import run_extism_artifact
@@ -71,6 +71,8 @@ async def execution_stream(websocket: WebSocket) -> None:
         try:
             compiled = compile_python(source)
         except CompilerError as exc:
+            record_compile_error()
+
             await websocket.send_json(
                 {
                     "type": "done",
