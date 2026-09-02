@@ -19,8 +19,11 @@ export default function Playground() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [violations, setViolations] = useState([]);
+  const [streamLogs, setStreamLogs] = useState([]);
+
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
+
   const handleEditorMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
@@ -48,20 +51,66 @@ export default function Playground() {
     );
   }, [violations]);
 
-  const handleRun = async () => {
+  const handleRun = () => {
     setLoading(true);
     setError(null);
-    try {
-      const data = await apiPost('/api/run', { source });
-      setResult(data);
-      setExecutions((prev) => [data, ...prev].slice(0, 20));
-    } catch (e) {
-      setError(e.message);
-      setResult(null);
-    } finally {
+    setResult(null);
+    setStreamLogs([]);
+
+    const protocol =
+      window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+
+    const socket = new WebSocket(
+      `${protocol}//${window.location.host}/ws/executions`,
+    );
+
+    socket.onopen = () => {
+      socket.send(JSON.stringify({ source }));
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(event.data);
+
+        if (frame.type === 'compiled') {
+          setStreamLogs((prev) => [...prev, 'compiling…']);
+          return;
+        }
+
+        if (frame.type === 'stdout') {
+          setStreamLogs((prev) => [...prev, frame.data ?? '']);
+          return;
+        }
+
+        if (frame.type === 'done') {
+          setResult(frame);
+
+          if (frame.violations) {
+            setViolations(frame.violations);
+          }
+
+          setExecutions((prev) => [frame, ...prev].slice(0, 20));
+
+          setLoading(false);
+          socket.close();
+        }
+      } catch {
+        setError('Received an invalid WebSocket response.');
+        setLoading(false);
+        socket.close();
+      }
+    };
+
+    socket.onerror = () => {
+      setError('WebSocket connection failed.');
       setLoading(false);
-    }
+    };
+
+    socket.onclose = () => {
+      setLoading(false);
+    };
   };
+
   const handleCompile = async () => {
     setLoading(true);
     setError(null);
@@ -70,7 +119,7 @@ export default function Playground() {
       const data = await apiPost('/api/compile', { source });
       setResult(data);
       setViolations(data.violations ?? []);
-      setExecutions((prev) => [data, ...prev].slice(0, 20));
+      // Compile results are NOT added to executions — only run results belong there
     } catch (e) {
       setError(e.message);
       setResult(null);
@@ -78,7 +127,6 @@ export default function Playground() {
       setLoading(false);
     }
   };
-
 
   const handleLint = async () => {
     setLoading(true);
@@ -114,6 +162,7 @@ export default function Playground() {
       setLoading(false);
     }
   };
+
   const handleRunInfinite = async () => {
     setLoading(true);
     setError(null);
@@ -133,6 +182,7 @@ export default function Playground() {
       setLoading(false);
     }
   };
+
   return (
     <PageLayout>
       <PageBody className="!p-0 flex flex-col">
@@ -143,7 +193,7 @@ export default function Playground() {
             disabled={loading}
             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
-            {loading ? 'Running...' : 'Run (stub)'}
+            {loading ? 'Running...' : 'Run'}
           </button>
 
           <button
@@ -152,8 +202,9 @@ export default function Playground() {
             disabled={loading}
             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
           >
-            {loading ? 'Compiling...' : 'Compile (stub)'}
+            {loading ? 'Compiling...' : 'Compile'}
           </button>
+
           <button
             type="button"
             onClick={handleLint}
@@ -181,6 +232,7 @@ export default function Playground() {
             {loading ? 'Running...' : 'Run infinite_loop.wasm'}
           </button>
         </div>
+
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200">
           <div className="min-h-[280px] lg:min-h-0 flex flex-col">
             <div className="min-h-[220px] flex-1">
@@ -197,8 +249,37 @@ export default function Playground() {
                   padding: { top: 12 },
                 }}
               />
+            </div>
 
+            <div className="border-t border-neutral-200 bg-neutral-950 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-neutral-300">
+                  Live execution
+                </h3>
 
+                {loading && (
+                  <span className="text-[10px] text-amber-400">
+                    Running...
+                  </span>
+                )}
+              </div>
+
+              <div className="max-h-40 overflow-y-auto rounded-lg border border-neutral-800 bg-black p-3 font-mono text-xs text-neutral-200">
+                {streamLogs.length === 0 ? (
+                  <p className="text-neutral-600">
+                    Live output appears here while the plugin runs.
+                  </p>
+                ) : (
+                  streamLogs.map((log, index) => (
+                    <pre
+                      key={`${index}-${log}`}
+                      className="whitespace-pre-wrap"
+                    >
+                      {log}
+                    </pre>
+                  ))
+                )}
+              </div>
             </div>
 
             <div className="max-h-48 overflow-auto border-t border-neutral-200 bg-white p-3">
@@ -206,6 +287,7 @@ export default function Playground() {
                 <h3 className="text-xs font-semibold text-neutral-800">
                   Violations
                 </h3>
+
                 <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
                   {violations.length}
                 </span>
@@ -226,10 +308,12 @@ export default function Playground() {
                         <span className="rounded bg-rose-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-rose-700">
                           {violation.rule}
                         </span>
+
                         <span className="font-mono text-[10px] text-neutral-500">
                           Line {violation.line}, Col {violation.col}
                         </span>
                       </div>
+
                       <p className="mt-1 text-xs text-rose-700">
                         {violation.message}
                       </p>
@@ -239,37 +323,61 @@ export default function Playground() {
               )}
             </div>
           </div>
+
           <div className="p-4 font-mono text-xs overflow-auto bg-neutral-900 text-neutral-100 min-h-[200px]">
-            {error && <p className="text-rose-400 mb-2">{error}</p>}
+            {error && (
+              <p className="text-rose-400 mb-2">
+                {error}
+              </p>
+            )}
+
             {result ? (
               <div className="space-y-4">
                 <div>
-                  <p className="mb-1 text-neutral-400">status</p>
+                  <p className="mb-1 text-neutral-400">
+                    status
+                  </p>
+
                   <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${result.status === 'ok'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : result.status === 'timeout'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-neutral-100 text-neutral-700'
-                      }`}
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      result.status === 'ok'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : result.status === 'timeout'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-neutral-100 text-neutral-700'
+                    }`}
                   >
                     {result.status || '(no status)'}
                   </span>
                 </div>
+
                 <div>
-                  <p className="mb-1 text-neutral-400">artifact</p>
+                  <p className="mb-1 text-neutral-400">
+                    artifact
+                  </p>
+
                   <p className="text-white">
-                    {result.artifact || result.artifact_id || '(no artifact)'}
+                    {result.artifact ||
+                      result.artifact_id ||
+                      '(no artifact)'}
                   </p>
                 </div>
+
                 <div>
-                  <p className="mb-1 text-neutral-400">stdout</p>
+                  <p className="mb-1 text-neutral-400">
+                    stdout
+                  </p>
+
                   <pre className="whitespace-pre-wrap">
                     {result.stdout || '(no stdout)'}
                   </pre>
                 </div>
+
                 <div>
-                  <p className="mb-1 text-neutral-400">stderr</p>
+                  <p className="mb-1 text-neutral-400">
+                    stderr
+                  </p>
+
                   <pre className="whitespace-pre-wrap text-rose-300">
                     {result.stderr || '(no stderr)'}
                   </pre>
@@ -287,12 +395,13 @@ export default function Playground() {
                 </p>
               </div>
             ) : (
-              <p className="text-neutral-500">Output appears here after Run.</p>
+              <p className="text-neutral-500">
+                Output appears here after Run.
+              </p>
             )}
           </div>
         </div>
       </PageBody>
     </PageLayout>
   );
-
 }
