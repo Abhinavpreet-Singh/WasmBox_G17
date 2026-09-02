@@ -56,19 +56,6 @@ def resolve_compiled_artifact(artifact_id: str) -> Path:
     return path
 
 
-def _create_engine() -> Engine:
-    config = Config()
-    config.consume_fuel = True
-    return Engine(config)
-
-
-def _create_store(engine: Engine) -> Store:
-    store = Store(engine)
-    store.set_limits(memory_size=DEFAULT_MEMORY_BYTES)
-    store.set_fuel(DEFAULT_FUEL)
-    return store
-
-
 def _classify_trap(error_detail: str) -> str:
     lower = error_detail.lower()
     if "fuel" in lower or "epoch" in lower:
@@ -120,6 +107,7 @@ def run_wasm(
         instance = linker.instantiate(store, module)
         start = instance.exports(store).get("_start")
         if start is None:
+            timer.cancel()
             raise RuntimeError("WASM module does not export _start")
 
         status = "ok"
@@ -133,6 +121,8 @@ def run_wasm(
                 record_sandbox_timeout()
             elif "memory" in error_detail.lower() or "out of memory" in error_detail.lower():
                 record_sandbox_oom()
+        finally:
+            timer.cancel()
 
         stdout_text = Path(stdout_path).read_text(encoding="utf-8")
         stderr_text = Path(stderr_path).read_text(encoding="utf-8")

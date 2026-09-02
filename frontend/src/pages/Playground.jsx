@@ -119,7 +119,7 @@ export default function Playground() {
       const data = await apiPost('/api/compile', { source });
       setResult(data);
       setViolations(data.violations ?? []);
-      setExecutions((prev) => [data, ...prev].slice(0, 20));
+      // Compile results are NOT added to executions — only run results belong there
     } catch (e) {
       setError(e.message);
       setResult(null);
@@ -202,7 +202,7 @@ export default function Playground() {
             disabled={loading}
             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
           >
-            {loading ? 'Compiling...' : 'Compile (stub)'}
+            {loading ? 'Compiling...' : 'Compile'}
           </button>
 
           <button
