@@ -9,6 +9,12 @@ const ATTACK_SCENARIOS = [
     description: 'Attempts to read a protected operating-system file.',
     source: 'open("/etc/passwd").read()',
   },
+  {
+    id: 'infinite-loop',
+    title: 'Infinite Loop',
+    description: 'Attempts to consume execution time without terminating.',
+    source: 'while True:\n    pass',
+  },
 ];
 
 export default function SecurityLab() {
