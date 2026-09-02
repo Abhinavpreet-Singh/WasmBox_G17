@@ -12,6 +12,13 @@ def test_health():
     assert body["service"] == "wasmbox"
 
 
+def test_metrics_endpoint():
+    client = TestClient(app)
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "wasmbox_sandbox_timeouts_total" in response.text
+
+
 def test_lint_rejects_malicious_code():
     client = TestClient(app)
 

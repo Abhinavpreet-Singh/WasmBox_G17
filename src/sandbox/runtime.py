@@ -14,6 +14,7 @@ from wasmtime import Config, Engine, Linker, Module, Store, WasiConfig
 from src.metrics.prometheus import record_sandbox_oom, record_sandbox_timeout
 
 DEFAULT_EXAMPLES_DIR = Path(__file__).resolve().parents[2] / "plugins" / "examples"
+ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "artifacts"
 DEFAULT_FUEL = 1_000_000
 DEFAULT_MEMORY_BYTES = 16 * 1024 * 1024
 
@@ -41,17 +42,18 @@ def resolve_artifact_path(artifact: str, *, base_dir: Path | None = None) -> Pat
     return path
 
 
-def _create_engine() -> Engine:
-    config = Config()
-    config.consume_fuel = True
-    return Engine(config)
-
-
-def _create_store(engine: Engine) -> Store:
-    store = Store(engine)
-    store.set_limits(memory_size=DEFAULT_MEMORY_BYTES)
-    store.set_fuel(DEFAULT_FUEL)
-    return store
+def resolve_compiled_artifact(artifact_id: str) -> Path:
+    """Resolve a compiled WASM artifact under artifacts/ by id or filename."""
+    base = ARTIFACTS_DIR.resolve()
+    name = Path(artifact_id).name
+    if not name.endswith(".wasm"):
+        name = f"{name}.wasm"
+    path = (base / name).resolve()
+    if base not in path.parents and path != base:
+        raise ValueError("artifact path escapes artifacts directory")
+    if not path.is_file():
+        raise FileNotFoundError(f"Compiled artifact not found: {name}")
+    return path
 
 
 def _classify_trap(error_detail: str) -> str:
@@ -105,6 +107,7 @@ def run_wasm(
         instance = linker.instantiate(store, module)
         start = instance.exports(store).get("_start")
         if start is None:
+            timer.cancel()
             raise RuntimeError("WASM module does not export _start")
 
         status = "ok"
@@ -118,6 +121,8 @@ def run_wasm(
                 record_sandbox_timeout()
             elif "memory" in error_detail.lower() or "out of memory" in error_detail.lower():
                 record_sandbox_oom()
+        finally:
+            timer.cancel()
 
         stdout_text = Path(stdout_path).read_text(encoding="utf-8")
         stderr_text = Path(stderr_path).read_text(encoding="utf-8")
