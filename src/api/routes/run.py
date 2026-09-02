@@ -2,10 +2,12 @@ from pydantic import BaseModel, Field
 
 from fastapi import APIRouter, HTTPException
 
+from src.metrics.prometheus import record_execution
 from src.sandbox.ast_guard import lint_source
 from src.sandbox.compiler_client import CompilerError, compile_python
 from src.sandbox.extism_runtime import run_extism_artifact
 from src.sandbox.runtime import resolve_compiled_artifact, run_wasm
+from src.storage.repository import record_execution_result
 
 router = APIRouter(prefix="/api", tags=["run"])
 
@@ -39,12 +41,22 @@ class ExecutionResult(BaseModel):
 
 @router.post("/run/wasm", response_model=ExecutionResult)
 def run_wasm_artifact(body: WasmRunRequest) -> ExecutionResult:
+    record_execution()
+
     try:
         result = run_wasm(body.artifact, stdin=body.stdin)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    record_execution_result(
+        status=result.status,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        duration_ms=result.duration_ms,
+        artifact_id="",
+    )
 
     return ExecutionResult(
         status=result.status,
@@ -59,6 +71,8 @@ def run_wasm_artifact(body: WasmRunRequest) -> ExecutionResult:
 @router.post("/run", response_model=ExecutionResult)
 def run_plugin(body: RunRequest) -> ExecutionResult:
     if body.artifact_id:
+        record_execution()
+
         try:
             wasm_path = resolve_compiled_artifact(body.artifact_id)
         except FileNotFoundError as exc:
@@ -67,6 +81,15 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         result = run_extism_artifact(wasm_path)
+
+        record_execution_result(
+            status=result.status,
+            stdout=result.stdout,
+            stderr=result.stderr,
+            duration_ms=result.duration_ms,
+            artifact_id=body.artifact_id,
+        )
+
         return ExecutionResult(
             status=result.status,
             stdout=result.stdout,
@@ -100,7 +123,18 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
             message=str(exc),
         )
 
+    record_execution()
+
     result = run_extism_artifact(compiled.wasm_path)
+
+    record_execution_result(
+        status=result.status,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        duration_ms=result.duration_ms,
+        artifact_id=compiled.artifact_id,
+    )
+
     return ExecutionResult(
         status=result.status,
         stdout=result.stdout,

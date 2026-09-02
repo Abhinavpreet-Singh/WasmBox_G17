@@ -8,11 +8,15 @@ from src.api.routes.health import router as health_router
 from src.api.routes.metrics import router as metrics_router
 from src.api.routes.run import router as run_router
 from src.api.routes.lint import router as lint_router
+from src.api.routes.executions import router as executions_router
 from src.api.websocket import router as websocket_router
+from src.storage.db import Base, engine
+from src.storage.models import Execution
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    Base.metadata.create_all(bind=engine)
     yield
 
 
@@ -39,4 +43,5 @@ app.include_router(compile_router)
 app.include_router(run_router)
 app.include_router(lint_router)
 app.include_router(metrics_router)
+app.include_router(executions_router)
 app.include_router(websocket_router)
