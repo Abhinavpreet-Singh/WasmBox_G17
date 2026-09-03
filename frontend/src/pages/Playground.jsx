@@ -382,20 +382,14 @@ export default function Playground() {
                     {result.stderr || '(no stderr)'}
                   </pre>
                 </div>
-
                 {result.compiler_log !== undefined && (
                   <div>
-                    <p className="mb-1 text-neutral-400">
-                      compilation log
-                    </p>
-
+                    <p className="mb-1 text-neutral-400">compilation log</p>
                     <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-neutral-700 bg-black p-3 text-neutral-300">
-                      {result.compiler_log ||
-                        '(No compilation log returned by API.)'}
+                      {result.compiler_log || '(No compilation log returned by API.)'}
                     </pre>
                   </div>
                 )}
-
                 <p className="text-neutral-400">
                   Duration: {result.duration_ms ?? '—'} ms
                 </p>
