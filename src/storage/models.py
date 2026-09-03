@@ -1,4 +1,4 @@
-"""Database models for plugins, plugin versions, and executions."""
+"""Database models for plugins, plugin versions, and execution records."""
 
 from datetime import datetime
 
@@ -51,18 +51,27 @@ class PluginVersion(Base):
 
 
 class Execution(Base):
-    """Record for a sandbox execution."""
+    """Records every sandbox run result for the Operations dashboard."""
 
     __tablename__ = "executions"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="ok")
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True,
+        autoincrement=True,
+    )
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="ok",
+    )
     stdout: Mapped[str] = mapped_column(Text, nullable=False, default="")
     stderr: Mapped[str] = mapped_column(Text, nullable=False, default="")
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     artifact_id: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        nullable=False,
         default=datetime.utcnow,
+        nullable=False,
     )
