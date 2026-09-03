@@ -1,3 +1,5 @@
+"""Execution history API routes."""
+
 from fastapi import APIRouter
 from sqlalchemy import select
 
@@ -9,24 +11,23 @@ router = APIRouter(prefix="/api", tags=["executions"])
 
 
 @router.get("/executions")
-def get_violations() -> list[dict]:
-    """Return execution records that finished with a non-ok status."""
+def get_executions() -> list[dict]:
+    """Return execution history, newest first."""
 
     with SessionLocal() as session:
         executions = session.scalars(
-            select(Execution)
-            .where(Execution.status != "ok")
-            .order_by(Execution.created_at.desc())
+            select(Execution).order_by(Execution.created_at.desc())
         ).all()
 
         return [
             {
                 "id": execution.id,
+                "artifact_id": execution.artifact_id,
                 "status": execution.status,
                 "stdout": execution.stdout,
                 "stderr": execution.stderr,
                 "duration_ms": execution.duration_ms,
-                "artifact_id": execution.artifact_id,
+                "wasm_sha256": execution.wasm_sha256,
                 "created_at": execution.created_at.isoformat(),
             }
             for execution in executions
