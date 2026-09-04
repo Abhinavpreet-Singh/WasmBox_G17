@@ -1,10 +1,13 @@
-"""SQLAlchemy engine and session factory."""
+"""SQLAlchemy engine, declarative base, and session factory."""
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 
 DATABASE_URL = "sqlite:///./wasmbox.db"
+
+
+Base = declarative_base()
 
 
 engine = create_engine(
@@ -17,4 +20,4 @@ SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine,
-)
+)
