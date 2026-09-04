@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 """SQLAlchemy engine and session factory."""
 
 from pathlib import Path
@@ -25,3 +26,29 @@ SessionLocal = sessionmaker(
     autoflush=False,
     bind=engine,
 )
+=======
+"""SQLAlchemy engine and session factory."""
+
+import os
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+
+DATABASE_URL = os.environ.get("WASMBOX_DATABASE_URL", "sqlite:///./wasmbox.db")
+
+
+_connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args=_connect_args,
+)
+
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
+>>>>>>> Stashed changes
