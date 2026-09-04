@@ -101,6 +101,11 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
         )
 
     if not body.source.strip():
+        record_execution_result(
+            status="error",
+            stderr="Provide source code or artifact_id",
+        )
+
         return ExecutionResult(
             status="error",
             message="Provide source code or artifact_id",
@@ -108,9 +113,16 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
 
     violations = lint_source(body.source)
     if violations:
+        reason = violations[0].message
+
+        record_execution_result(
+            status="blocked",
+            stderr=reason,
+        )
+
         return ExecutionResult(
             status="blocked",
-            stderr=violations[0].message,
+            stderr=reason,
             message="AST guard rejected source before compile",
         )
 
@@ -118,15 +130,20 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
         compiled = compile_python(body.source)
     except CompilerError as exc:
         record_compile_error()
+        reason = exc.log or str(exc)
+
+        record_execution_result(
+            status="error",
+            stderr=reason,
+        )
 
         return ExecutionResult(
             status="error",
-            stderr=exc.log or str(exc),
+            stderr=reason,
             message=str(exc),
         )
 
     record_execution()
-
     result = run_extism_artifact(compiled.wasm_path)
 
     record_execution_result(
@@ -135,6 +152,7 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
         stderr=result.stderr,
         duration_ms=result.duration_ms,
         artifact_id=compiled.artifact_id,
+        wasm_sha256=compiled.wasm_sha256,
     )
 
     return ExecutionResult(
