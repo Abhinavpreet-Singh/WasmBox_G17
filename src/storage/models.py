@@ -55,6 +55,7 @@ class Execution(Base):
     stderr: Mapped[str] = mapped_column(Text, nullable=False, default="")
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     artifact_id: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    wasm_sha256: Mapped[str] = mapped_column(String(64), nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
