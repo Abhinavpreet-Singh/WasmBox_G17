@@ -2,17 +2,16 @@
 
 import hashlib
 from datetime import datetime
+from src.api.routes.run import ExecutionResult, RunRequest, run_plugin
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from src.storage.db import SessionLocal
 from src.storage.models import Plugin, PluginVersion
 
-
 router = APIRouter(prefix="/api/plugins", tags=["plugins"])
-
 
 class PluginSaveRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
@@ -95,3 +94,50 @@ def list_plugins() -> list[PluginResponse]:
         ).unique().all()
 
         return [plugin_response(plugin) for plugin in plugins]
+class PluginVersionResponse(BaseModel):
+    id: int
+    plugin_id: int
+    version: int
+    sha256: str
+    created_at: datetime
+
+
+@router.get("/{plugin_id}/versions", response_model=list[PluginVersionResponse])
+def list_plugin_versions(plugin_id: int) -> list[PluginVersionResponse]:
+    """Return plugin versions newest first."""
+
+    with SessionLocal() as session:
+        plugin = session.get(Plugin, plugin_id)
+        if plugin is None:
+            raise HTTPException(status_code=404, detail="Plugin not found")
+
+        versions = sorted(
+            plugin.versions,
+            key=lambda item: item.version,
+            reverse=True,
+        )
+
+        return [
+            PluginVersionResponse(
+                id=version.id,
+                plugin_id=version.plugin_id,
+                version=version.version,
+                sha256=version.sha256,
+                created_at=version.created_at,
+            )
+            for version in versions
+        ]
+
+
+@router.post("/{plugin_id}/run", response_model=ExecutionResult)
+def run_saved_plugin(plugin_id: int) -> ExecutionResult:
+    """Compile and run the latest saved plugin source."""
+
+    with SessionLocal() as session:
+        plugin = session.get(Plugin, plugin_id)
+        if plugin is None:
+            raise HTTPException(status_code=404, detail="Plugin not found")
+
+        source = plugin.source
+
+    return run_plugin(RunRequest(source=source))
