@@ -2,6 +2,7 @@
 
 from prometheus_client import Counter
 
+
 SANDBOX_TIMEOUTS = Counter(
     "wasmbox_sandbox_timeouts_total",
     "WASM executions stopped by fuel or epoch limits",
@@ -41,4 +42,3 @@ def record_compile_error() -> None:
 def record_execution() -> None:
     """Increment the counter for each execution that reaches the WASM runtime."""
     EXECUTIONS_TOTAL.inc()
-
