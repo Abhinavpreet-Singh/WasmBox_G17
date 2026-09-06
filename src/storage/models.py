@@ -13,10 +13,28 @@ class Plugin(Base):
 
     __tablename__ = "plugins"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    source: Mapped[str] = mapped_column(Text, nullable=False)
-    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(255),
+        unique=True,
+        nullable=False,
+    )
+
+    source: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
@@ -34,20 +52,36 @@ class PluginVersion(Base):
 
     __tablename__ = "plugin_versions"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
     plugin_id: Mapped[int] = mapped_column(
         ForeignKey("plugins.id"),
         nullable=False,
     )
-    version: Mapped[int] = mapped_column(Integer, nullable=False)
-    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
         nullable=False,
     )
 
-    plugin: Mapped[Plugin] = relationship(back_populates="versions")
+    plugin: Mapped[Plugin] = relationship(
+        back_populates="versions",
+    )
 
 
 class Execution(Base):
@@ -61,16 +95,62 @@ class Execution(Base):
         index=True,
         autoincrement=True,
     )
+
     status: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
         default="ok",
     )
-    stdout: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    stderr: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    artifact_id: Mapped[str] = mapped_column(String(255), nullable=False, default="")
-    wasm_sha256: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+
+    # Day 2 update:
+    # Stores the security classification assigned to the submitted source.
+    #
+    # Possible values include:
+    # - none
+    # - safe
+    # - filesystem
+    # - network
+    # - process
+    # - environment
+    # - dynamic_import
+    # - dangerous_builtin
+    # - multiple
+    attack_type: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="none",
+    )
+
+    stdout: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default="",
+    )
+
+    stderr: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default="",
+    )
+
+    duration_ms: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    artifact_id: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="",
+    )
+
+    wasm_sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
