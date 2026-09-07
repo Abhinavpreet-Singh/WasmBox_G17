@@ -30,3 +30,7 @@ def record_sandbox_oom() -> None:
 def record_compile_error() -> None:
     """Increment the counter when WASM compilation fails."""
     COMPILE_ERRORS_TOTAL.inc()
+
+def record_execution() -> None:
+    """Record a WASM execution."""
+    pass

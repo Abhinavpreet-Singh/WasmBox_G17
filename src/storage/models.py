@@ -42,3 +42,17 @@ class PluginVersion(Base):
     )
 
     plugin: Mapped[Plugin] = relationship(back_populates="versions")
+
+
+class Execution(Base):
+    __tablename__ = "executions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False)
+    stdout: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    stderr: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    duration_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    artifact_id: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
