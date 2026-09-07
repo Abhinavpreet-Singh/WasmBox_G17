@@ -12,6 +12,7 @@ from src.api.routes.executions import router as executions_router
 from src.api.websocket import router as websocket_router
 from src.storage.db import Base, engine
 from src.storage.models import Execution
+from src.api.routes.plugins import router as plugins_router
 
 
 @asynccontextmanager
@@ -45,3 +46,4 @@ app.include_router(lint_router)
 app.include_router(metrics_router)
 app.include_router(executions_router)
 app.include_router(websocket_router)
+app.include_router(plugins_router)
