@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import PageLayout, { PageBody } from '../components/layout/PageLayout';
-import { apiGet } from '../lib/api';
-
+import { apiGet, apiPost } from '../lib/api';
+import { useApp } from '../hooks/useApp';
 export default function Plugins() {
+  const {
+    navigateTo,
+    setPlaygroundSource,
+    setExecutions,
+  } = useApp();
   const [plugins, setPlugins] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [runningId, setRunningId] = useState(null);
+  const [runResults, setRunResults] = useState({});
+  const [actionError, setActionError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,7 +44,31 @@ export default function Plugins() {
       plugin.name.toLowerCase().includes(query),
     );
   }, [plugins, search]);
+  const handleLoad = (plugin) => {
+    setPlaygroundSource(plugin.source);
+    navigateTo('playground');
+  };
 
+  const handleRun = async (plugin) => {
+    setRunningId(plugin.id);
+    setActionError(null);
+
+    try {
+      const data = await apiPost(`/api/plugins/${plugin.id}/run`, {});
+      setRunResults((previous) => ({
+        ...previous,
+        [plugin.id]: data,
+      }));
+      setExecutions((previous) => [data, ...previous].slice(0, 20));
+    } catch (err) {
+      setActionError({
+        pluginId: plugin.id,
+        message: err.message,
+      });
+    } finally {
+      setRunningId(null);
+    }
+  };
   return (
     <PageLayout>
       <PageBody>
@@ -105,6 +137,52 @@ export default function Plugins() {
                     Saved: {new Date(plugin.created_at).toLocaleString()}
                   </p>
                 </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleLoad(plugin)}
+                    className="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
+                  >
+                    Load in Playground
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRun(plugin)}
+                    disabled={runningId === plugin.id}
+                    className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-700 disabled:opacity-50"
+                  >
+                    {runningId === plugin.id ? 'Running...' : 'Run'}
+                  </button>
+                </div>
+
+                {actionError?.pluginId === plugin.id && (
+                  <p className="mt-3 rounded-lg bg-rose-50 p-2 text-xs text-rose-700">
+                    {actionError.message}
+                  </p>
+                )}
+
+                {runResults[plugin.id] && (
+                  <div className="mt-3 rounded-lg bg-neutral-100 p-3 text-xs">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 font-semibold ${runResults[plugin.id].status === 'ok'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : runResults[plugin.id].status === 'timeout'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-rose-100 text-rose-700'
+                        }`}
+                    >
+                      {runResults[plugin.id].status}
+                    </span>
+
+                    <p className="mt-2 whitespace-pre-wrap text-neutral-700">
+                      {runResults[plugin.id].stdout ||
+                        runResults[plugin.id].stderr ||
+                        runResults[plugin.id].message ||
+                        'No output returned.'}
+                    </p>
+                  </div>
+                )}
               </article>
             ))}
           </div>
