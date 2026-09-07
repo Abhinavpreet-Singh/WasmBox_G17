@@ -1,4 +1,4 @@
-"""SQLAlchemy engine and session factory."""
+"""SQLAlchemy engine, declarative base, session factory, and schema helpers."""
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

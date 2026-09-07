@@ -105,7 +105,6 @@ def compile_python(source: str, *, artifacts_dir: Path | None = None) -> Compile
             "-v",
             f"{_docker_volume_path(py_path.parent)}:/work:ro",
             COMPILER_IMAGE,
-            "compile",
             f"/work/{py_path.name}",
             "-o",
             f"/artifacts/{wasm_name}",

@@ -72,17 +72,28 @@ export default function Playground() {
       try {
         const frame = JSON.parse(event.data);
 
-        if (frame.type === 'compiled') {
-          setStreamLogs((prev) => [...prev, 'compiling…']);
+        if (frame.event === 'start') {
+          setStreamLogs((prev) => [...prev, '⟳ starting…']);
           return;
         }
 
-        if (frame.type === 'stdout') {
-          setStreamLogs((prev) => [...prev, frame.data ?? '']);
+        if (frame.event === 'compiled') {
+          setStreamLogs((prev) => [...prev, '✓ compiled']);
           return;
         }
 
-        if (frame.type === 'done') {
+        if (frame.event === 'stdout') {
+          setStreamLogs((prev) => [...prev, frame.chunk ?? '']);
+          return;
+        }
+
+        if (frame.event === 'error') {
+          setError(frame.detail ?? 'WebSocket error');
+          setLoading(false);
+          return;
+        }
+
+        if (frame.event === 'done') {
           setResult(frame);
 
           if (frame.violations) {

@@ -16,3 +16,9 @@ export async function apiPost(path, body) {
   if (!r.ok) throw new Error(data.detail ?? `${path} failed: ${r.status}`);
   return data;
 }
+
+export async function apiGetText(path) {
+  const r = await fetch(`${API_BASE}${path}`);
+  if (!r.ok) throw new Error(`${path} failed: ${r.status}`);
+  return r.text();
+}

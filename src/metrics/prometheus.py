@@ -1,6 +1,7 @@
-"""Prometheus metric definitions — Week 1 Day 3+."""
+"""Prometheus metric definitions."""
 
 from prometheus_client import Counter
+
 
 SANDBOX_TIMEOUTS = Counter(
     "wasmbox_sandbox_timeouts_total",
