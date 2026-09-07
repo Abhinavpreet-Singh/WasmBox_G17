@@ -4,8 +4,12 @@ import ast
 from dataclasses import dataclass
 
 
-BLOCKED_MODULES = {"os", "socket", "subprocess"}
-BLOCKED_CALLS = {"open", "eval", "exec"}
+BLOCKED_MODULES = {"os", "socket", "subprocess", "ctypes", "importlib", "builtins"}
+BLOCKED_CALLS = {"open", "eval", "exec", "__import__", "compile", "breakpoint"}
+
+# Attribute chains that must be blocked even without a direct import
+# e.g. someone does: x = __builtins__; x['open']('/etc/passwd')
+BLOCKED_ATTRIBUTES = {"system", "popen", "spawn", "fork", "execve"}
 
 
 @dataclass(frozen=True)
@@ -33,10 +37,10 @@ def lint_source(source: str) -> list[Violation]:
     violations: list[Violation] = []
 
     for node in ast.walk(tree):
+        # ── import os / import subprocess ────────────────────────────────────
         if isinstance(node, ast.Import):
             for alias in node.names:
                 module = alias.name.split(".", 1)[0]
-
                 if module in BLOCKED_MODULES:
                     violations.append(
                         Violation(
@@ -47,9 +51,9 @@ def lint_source(source: str) -> list[Violation]:
                         )
                     )
 
+        # ── from os import path / from importlib import * ────────────────────
         elif isinstance(node, ast.ImportFrom):
             module = (node.module or "").split(".", 1)[0]
-
             if module in BLOCKED_MODULES:
                 violations.append(
                     Violation(
@@ -59,7 +63,6 @@ def lint_source(source: str) -> list[Violation]:
                         rule="blocked-import",
                     )
                 )
-
             if any(alias.name == "*" for alias in node.names):
                 violations.append(
                     Violation(
@@ -70,7 +73,9 @@ def lint_source(source: str) -> list[Violation]:
                     )
                 )
 
+        # ── open(...) / eval(...) / exec(...) / __import__(...) ──────────────
         elif isinstance(node, ast.Call):
+            # Direct name call: open(), eval(), __import__()
             if isinstance(node.func, ast.Name) and node.func.id in BLOCKED_CALLS:
                 violations.append(
                     Violation(
@@ -80,5 +85,16 @@ def lint_source(source: str) -> list[Violation]:
                         rule="blocked-call",
                     )
                 )
+            # Attribute call: os.system(), subprocess.Popen(), etc.
+            elif isinstance(node.func, ast.Attribute):
+                if node.func.attr in BLOCKED_ATTRIBUTES:
+                    violations.append(
+                        Violation(
+                            line=node.lineno,
+                            col=node.col_offset + 1,
+                            message=f"Call to '.{node.func.attr}' is not allowed",
+                            rule="blocked-call",
+                        )
+                    )
 
     return violations

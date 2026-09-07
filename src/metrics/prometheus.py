@@ -1,6 +1,7 @@
-"""Prometheus metric definitions — Week 1 Day 3+."""
+"""Prometheus metric definitions."""
 
 from prometheus_client import Counter
+
 
 SANDBOX_TIMEOUTS = Counter(
     "wasmbox_sandbox_timeouts_total",
@@ -12,9 +13,14 @@ OOM_TOTAL = Counter(
     "WASM executions stopped by memory limits",
 )
 
-COMPILE_ERRORS = Counter(
+COMPILE_ERRORS_TOTAL = Counter(
     "wasmbox_compile_errors_total",
-    "Plugin compile failures after AST guard",
+    "WASM compilation errors",
+)
+
+EXECUTIONS_TOTAL = Counter(
+    "wasmbox_executions_total",
+    "Total WASM plugin executions that reached the runtime",
 )
 
 
@@ -29,5 +35,10 @@ def record_sandbox_oom() -> None:
 
 
 def record_compile_error() -> None:
-    """Increment the counter when compilation fails."""
-    COMPILE_ERRORS.inc()
+    """Increment the counter when WASM compilation fails."""
+    COMPILE_ERRORS_TOTAL.inc()
+
+
+def record_execution() -> None:
+    """Increment the counter for each execution that reaches the WASM runtime."""
+    EXECUTIONS_TOTAL.inc()

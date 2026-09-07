@@ -2,10 +2,12 @@ from pydantic import BaseModel, Field
 
 from fastapi import APIRouter, HTTPException
 
+from src.metrics.prometheus import record_compile_error, record_execution
 from src.sandbox.ast_guard import lint_source
 from src.sandbox.compiler_client import CompilerError, compile_python
 from src.sandbox.extism_runtime import run_extism_artifact
 from src.sandbox.runtime import resolve_compiled_artifact, run_wasm
+from src.storage.repository import record_execution_result
 
 router = APIRouter(prefix="/api", tags=["run"])
 
@@ -27,11 +29,11 @@ class WasmRunRequest(BaseModel):
 
 
 class ExecutionResult(BaseModel):
-    status: str = "stub"
+    status: str = "error"
     stdout: str = ""
     stderr: str = ""
     duration_ms: int = 0
-    message: str = "Stub response — implement Week 2 Day 8"
+    message: str = ""
     artifact: str = ""
     artifact_id: str = ""
     wasm_sha256: str = ""
@@ -39,12 +41,22 @@ class ExecutionResult(BaseModel):
 
 @router.post("/run/wasm", response_model=ExecutionResult)
 def run_wasm_artifact(body: WasmRunRequest) -> ExecutionResult:
+    record_execution()
+
     try:
         result = run_wasm(body.artifact, stdin=body.stdin)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    record_execution_result(
+        status=result.status,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        duration_ms=result.duration_ms,
+        artifact_id="",
+    )
 
     return ExecutionResult(
         status=result.status,
@@ -59,6 +71,8 @@ def run_wasm_artifact(body: WasmRunRequest) -> ExecutionResult:
 @router.post("/run", response_model=ExecutionResult)
 def run_plugin(body: RunRequest) -> ExecutionResult:
     if body.artifact_id:
+        record_execution()
+
         try:
             wasm_path = resolve_compiled_artifact(body.artifact_id)
         except FileNotFoundError as exc:
@@ -67,6 +81,15 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         result = run_extism_artifact(wasm_path)
+
+        record_execution_result(
+            status=result.status,
+            stdout=result.stdout,
+            stderr=result.stderr,
+            duration_ms=result.duration_ms,
+            artifact_id=body.artifact_id,
+        )
+
         return ExecutionResult(
             status=result.status,
             stdout=result.stdout,
@@ -78,6 +101,11 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
         )
 
     if not body.source.strip():
+        record_execution_result(
+            status="error",
+            stderr="Provide source code or artifact_id",
+        )
+
         return ExecutionResult(
             status="error",
             message="Provide source code or artifact_id",
@@ -85,22 +113,48 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
 
     violations = lint_source(body.source)
     if violations:
+        reason = violations[0].message
+
+        record_execution_result(
+            status="blocked",
+            stderr=reason,
+        )
+
         return ExecutionResult(
             status="blocked",
-            stderr=violations[0].message,
+            stderr=reason,
             message="AST guard rejected source before compile",
         )
 
     try:
         compiled = compile_python(body.source)
     except CompilerError as exc:
+        record_compile_error()
+        reason = exc.log or str(exc)
+
+        record_execution_result(
+            status="error",
+            stderr=reason,
+        )
+
         return ExecutionResult(
             status="error",
-            stderr=exc.log or str(exc),
+            stderr=reason,
             message=str(exc),
         )
 
+    record_execution()
     result = run_extism_artifact(compiled.wasm_path)
+
+    record_execution_result(
+        status=result.status,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        duration_ms=result.duration_ms,
+        artifact_id=compiled.artifact_id,
+        wasm_sha256=compiled.wasm_sha256,
+    )
+
     return ExecutionResult(
         status=result.status,
         stdout=result.stdout,
