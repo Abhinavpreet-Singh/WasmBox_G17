@@ -8,7 +8,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from src.metrics.prometheus import record_compile_error, record_execution
 from src.sandbox.ast_guard import lint_source
-from src.sandbox.attack_classifier import classify_source
+from src.security.classifier import classify_source
 from src.sandbox.compiler_client import CompilerError, compile_python
 from src.sandbox.extism_runtime import run_extism_artifact
 from src.sandbox.runtime import resolve_compiled_artifact, run_wasm
