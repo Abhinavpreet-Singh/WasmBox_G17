@@ -12,12 +12,9 @@ from src.api.routes.lint import router as lint_router
 from src.api.routes.metrics import router as metrics_router
 from src.api.routes.plugins import router as plugins_router
 from src.api.routes.run import router as run_router
-from src.api.routes.lint import router as lint_router
-from src.api.routes.executions import router as executions_router
+from src.api.routes.security import router as security_router
 from src.api.websocket import router as websocket_router
-from src.storage.db import Base, engine
-from src.storage.models import Execution
-from src.api.routes.plugins import router as plugins_router
+from src.storage.db import Base, engine, ensure_schema
 
 
 @asynccontextmanager
@@ -26,8 +23,8 @@ async def lifespan(_app: FastAPI):
     Initialize the database when the application starts.
 
     create_all() creates missing tables.
-    ensure_schema() adds small schema updates, such as the Day 2
-    executions.attack_type column, to an existing SQLite database.
+    ensure_schema() adds small schema updates, such as the
+    executions.attack_type column, to an existing database.
     """
 
     Base.metadata.create_all(bind=engine)
@@ -62,5 +59,6 @@ app.include_router(run_router)
 app.include_router(lint_router)
 app.include_router(metrics_router)
 app.include_router(executions_router)
+app.include_router(security_router)
 app.include_router(websocket_router)
 app.include_router(plugins_router)
