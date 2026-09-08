@@ -25,12 +25,11 @@ async def lifespan(_app: FastAPI):
     Initialize the database when the application starts.
 
     create_all() creates missing tables.
-    ensure_schema() adds small schema updates, such as the Day 2
-    executions.attack_type column, to an existing SQLite database.
+    ensure_schema() adds small schema updates, such as the
+    executions.attack_type column, to an existing database.
     """
 
     Base.metadata.create_all(bind=engine)
-    ensure_schema()
 
     yield
 
