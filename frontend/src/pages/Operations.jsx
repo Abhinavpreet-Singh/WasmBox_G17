@@ -1,5 +1,55 @@
 import { useEffect, useState } from 'react';
 import PageLayout, { PageBody } from '../components/layout/PageLayout';
+import { apiGet } from '../lib/api';
+
+function HealthBadge({ status }) {
+  const styles = {
+    ok: 'bg-green-50 text-green-700 border-green-200',
+    error: 'bg-red-50 text-red-700 border-red-200',
+    loading: 'bg-neutral-50 text-neutral-500 border-neutral-200',
+  };
+  return (
+    <span className={`text-xs font-medium px-2 py-1 rounded border ${styles[status] ?? styles.loading}`}>
+      {status === 'loading' ? 'checking…' : status}
+    </span>
+  );
+}
+
+export default function Operations() {
+  const [health, setHealth] = useState({ status: 'loading', service: '' });
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGet('/health')
+      .then((body) => {
+        if (!cancelled) setHealth({ status: 'ok', service: body.service });
+      })
+      .catch(() => {
+        if (!cancelled) setHealth({ status: 'error', service: '' });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <PageLayout>
+      <PageBody>
+        <div className="space-y-4 max-w-5xl">
+          <div className="rounded-xl border border-neutral-200 bg-white p-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-neutral-900">Sandbox health</h2>
+              <p className="text-sm text-neutral-500 mt-1">
+                {health.service ? `Service: ${health.service}` : 'Backend liveness check'}
+              </p>
+            </div>
+            <HealthBadge status={health.status} />
+          </div>
+        </div>
+      </PageBody>
+    </PageLayout>
+  );
+}
 
 function HealthRow({ label, value }) {
   return (
