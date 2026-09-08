@@ -31,7 +31,6 @@ async def lifespan(_app: FastAPI):
     """
 
     Base.metadata.create_all(bind=engine)
-    ensure_schema()
 
     yield
 
