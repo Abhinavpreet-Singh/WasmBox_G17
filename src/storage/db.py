@@ -1,27 +1,24 @@
-"""SQLAlchemy engine, declarative base, and session factory."""
-
-from pathlib import Path
+"""SQLAlchemy engine, declarative base, session factory, and schema helpers."""
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import sessionmaker
+
+from src.storage.models import Base
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = PROJECT_ROOT / "wasmbox-data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-DATABASE_PATH = DATA_DIR / "wasmbox.db"
-DATABASE_URL = f"sqlite:///{DATABASE_PATH.as_posix()}"
-
-Base = declarative_base()
+DATABASE_URL = "postgresql+psycopg2://wasmbox:wasmbox@localhost:5433/wasmbox"
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    pool_pre_ping=True,
 )
 
 SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
     bind=engine,
+    autoflush=False,
+    autocommit=False,
 )
+
+
+def init_db() -> None:
+    Base.metadata.create_all(bind=engine)
