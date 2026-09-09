@@ -15,39 +15,42 @@ function HealthBadge({ status }) {
   );
 }
 
-export default function Operations() {
-  const [health, setHealth] = useState({ status: 'loading', service: '' });
+const MOCK_VIOLATIONS = [
+  { line: 3, col: 5, message: "Import of 'os' is not allowed", rule: 'blocked-import' },
+  { line: 7, col: 1, message: "Call to 'eval' is not allowed", rule: 'blocked-call' },
+  { line: 12, col: 9, message: "Import of 'subprocess' is not allowed", rule: 'blocked-import' },
+];
 
-  useEffect(() => {
-    let cancelled = false;
-    apiGet('/health')
-      .then((body) => {
-        if (!cancelled) setHealth({ status: 'ok', service: body.service });
-      })
-      .catch(() => {
-        if (!cancelled) setHealth({ status: 'error', service: '' });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+function ViolationsTable({ violations }) {
+  if (violations.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-6 text-center text-sm text-neutral-500">
+        No violations recorded yet.
+      </div>
+    );
+  }
 
   return (
-    <PageLayout>
-      <PageBody>
-        <div className="space-y-4 max-w-5xl">
-          <div className="rounded-xl border border-neutral-200 bg-white p-5 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-neutral-900">Sandbox health</h2>
-              <p className="text-sm text-neutral-500 mt-1">
-                {health.service ? `Service: ${health.service}` : 'Backend liveness check'}
-              </p>
-            </div>
-            <HealthBadge status={health.status} />
-          </div>
-        </div>
-      </PageBody>
-    </PageLayout>
+    <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-neutral-50 text-left text-xs text-neutral-500">
+          <tr>
+            <th className="px-4 py-2">Line:Col</th>
+            <th className="px-4 py-2">Rule</th>
+            <th className="px-4 py-2">Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          {violations.map((v, i) => (
+            <tr key={i} className="border-t border-neutral-100">
+              <td className="px-4 py-2 font-mono text-xs text-neutral-500">{v.line}:{v.col}</td>
+              <td className="px-4 py-2 font-mono text-xs text-red-600">{v.rule}</td>
+              <td className="px-4 py-2 text-neutral-700">{v.message}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
