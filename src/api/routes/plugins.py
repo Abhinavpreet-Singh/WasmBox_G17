@@ -1,27 +1,21 @@
-"""Plugin CRUD API routes."""
+"""Plugin registry API routes."""
 
-from pathlib import Path
+import hashlib
+from datetime import datetime
+from src.api.routes.run import ExecutionResult, RunRequest, run_plugin
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from sqlalchemy import select
 
-from src.sandbox.ast_guard import lint_source
-from src.sandbox.compiler_client import (
-    ARTIFACTS_DIR,
-    CompilerError,
-    compile_python,
-    sha256_file,
-)
 from src.storage.db import SessionLocal
-from src.storage.models import Plugin
-
+from src.storage.models import Plugin, PluginVersion
 
 router = APIRouter(prefix="/api/plugins", tags=["plugins"])
 
-
-class PluginCreateRequest(BaseModel):
-    name: str
-    source: str
+class PluginSaveRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    source: str = Field(min_length=1)
 
 
 class PluginResponse(BaseModel):
@@ -29,116 +23,121 @@ class PluginResponse(BaseModel):
     name: str
     source: str
     sha256: str
+    latest_version: int
+    created_at: datetime
 
 
-class ArtifactResponse(BaseModel):
-    artifact_id: str
-    filename: str
-    size_bytes: int
-    sha256: str
+def plugin_response(plugin: Plugin) -> PluginResponse:
+    return PluginResponse(
+        id=plugin.id,
+        name=plugin.name,
+        source=plugin.source,
+        sha256=plugin.sha256,
+        latest_version=max(
+            (version.version for version in plugin.versions),
+            default=0,
+        ),
+        created_at=plugin.created_at,
+    )
 
 
-def _find_artifact_by_sha256(sha256: str) -> Path | None:
-    """Find a WASM artifact by its SHA-256 fingerprint."""
-    if not ARTIFACTS_DIR.exists():
-        return None
+@router.post("", response_model=PluginResponse)
+def save_plugin(body: PluginSaveRequest) -> PluginResponse:
+    """Create a plugin or save a new version under an existing name."""
 
-    for path in ARTIFACTS_DIR.glob("*.wasm"):
-        if sha256_file(path) == sha256:
-            return path
+    name = body.name.strip()
+    source = body.source
+    sha256 = hashlib.sha256(source.encode("utf-8")).hexdigest()
 
-    return None
+    with SessionLocal() as session:
+        plugin = session.scalar(
+            select(Plugin).where(Plugin.name == name)
+        )
 
+        if plugin is None:
+            plugin = Plugin(
+                name=name,
+                source=source,
+                sha256=sha256,
+            )
+            session.add(plugin)
+            session.flush()
+            next_version = 1
+        else:
+            plugin.source = source
+            plugin.sha256 = sha256
+            next_version = max(
+                (version.version for version in plugin.versions),
+                default=0,
+            ) + 1
 
-@router.get("", response_model=list[ArtifactResponse])
-def list_plugins() -> list[ArtifactResponse]:
-    """List compiled WASM artifacts and their metadata."""
-    ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
-
-    artifacts: list[ArtifactResponse] = []
-
-    for path in sorted(ARTIFACTS_DIR.glob("*.wasm")):
-        artifacts.append(
-            ArtifactResponse(
-                artifact_id=path.stem,
-                filename=path.name,
-                size_bytes=path.stat().st_size,
-                sha256=sha256_file(path),
+        plugin.versions.append(
+            PluginVersion(
+                version=next_version,
+                sha256=sha256,
             )
         )
 
-    return artifacts
-
-
-@router.post("", response_model=PluginResponse, status_code=201)
-def create_plugin(body: PluginCreateRequest) -> PluginResponse:
-    """Compile a plugin and persist its metadata."""
-    violations = lint_source(body.source)
-
-    if violations:
-        raise HTTPException(
-            status_code=400,
-            detail="AST guard rejected source before compile",
-        )
-
-    with SessionLocal() as session:
-        existing = (
-            session.query(Plugin)
-            .filter(Plugin.name == body.name)
-            .first()
-        )
-
-        if existing:
-            raise HTTPException(
-                status_code=409,
-                detail="A plugin with this name already exists",
-            )
-
-    try:
-        artifact = compile_python(body.source)
-    except CompilerError as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=str(exc),
-        ) from exc
-
-    with SessionLocal() as session:
-        plugin = Plugin(
-            name=body.name,
-            source=body.source,
-            sha256=artifact.wasm_sha256,
-        )
-
-        session.add(plugin)
         session.commit()
         session.refresh(plugin)
 
-        return PluginResponse(
-            id=plugin.id,
-            name=plugin.name,
-            source=plugin.source,
-            sha256=plugin.sha256,
-        )
+        return plugin_response(plugin)
 
 
-@router.delete("/{plugin_id}")
-def delete_plugin(plugin_id: int) -> dict[str, str]:
-    """Delete a plugin and its compiled WASM artifact."""
+@router.get("", response_model=list[PluginResponse])
+def list_plugins() -> list[PluginResponse]:
+    """Return saved plugins newest first."""
+
+    with SessionLocal() as session:
+        plugins = session.scalars(
+            select(Plugin).order_by(Plugin.created_at.desc())
+        ).unique().all()
+
+        return [plugin_response(plugin) for plugin in plugins]
+class PluginVersionResponse(BaseModel):
+    id: int
+    plugin_id: int
+    version: int
+    sha256: str
+    created_at: datetime
+
+
+@router.get("/{plugin_id}/versions", response_model=list[PluginVersionResponse])
+def list_plugin_versions(plugin_id: int) -> list[PluginVersionResponse]:
+    """Return plugin versions newest first."""
+
     with SessionLocal() as session:
         plugin = session.get(Plugin, plugin_id)
-
         if plugin is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Plugin not found",
+            raise HTTPException(status_code=404, detail="Plugin not found")
+
+        versions = sorted(
+            plugin.versions,
+            key=lambda item: item.version,
+            reverse=True,
+        )
+
+        return [
+            PluginVersionResponse(
+                id=version.id,
+                plugin_id=version.plugin_id,
+                version=version.version,
+                sha256=version.sha256,
+                created_at=version.created_at,
             )
+            for version in versions
+        ]
 
-        artifact = _find_artifact_by_sha256(plugin.sha256)
 
-        if artifact is not None:
-            artifact.unlink()
+@router.post("/{plugin_id}/run", response_model=ExecutionResult)
+def run_saved_plugin(plugin_id: int) -> ExecutionResult:
+    """Compile and run the latest saved plugin source."""
 
-        session.delete(plugin)
-        session.commit()
+    with SessionLocal() as session:
+        plugin = session.get(Plugin, plugin_id)
+        if plugin is None:
+            raise HTTPException(status_code=404, detail="Plugin not found")
 
-    return {"message": "Plugin deleted successfully"}
+        source = plugin.source
+
+    return run_plugin(RunRequest(source=source))

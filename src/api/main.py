@@ -12,10 +12,12 @@ from src.api.routes.lint import router as lint_router
 from src.api.routes.metrics import router as metrics_router
 from src.api.routes.plugins import router as plugins_router
 from src.api.routes.run import router as run_router
-from src.api.routes.security import router as security_router
-from src.api.websocket import router as websocket_router
-from src.storage.db import Base, engine, ensure_schema
-
+from src.api.routes.lint import router as lint_router
+from src.api.routes.executions import router as executions_router
+from src.api.websocket import router as ws_router
+from src.storage.db import engine
+from src.storage.models import Base
+from src.api.routes.plugins import router as plugins_router
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -58,6 +60,6 @@ app.include_router(run_router)
 app.include_router(lint_router)
 app.include_router(metrics_router)
 app.include_router(executions_router)
-app.include_router(security_router)
-app.include_router(websocket_router)
 app.include_router(plugins_router)
+
+app.include_router(ws_router)
