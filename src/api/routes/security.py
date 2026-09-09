@@ -1,4 +1,4 @@
-"""Execution history API routes."""
+"""Security monitoring API routes."""
 
 from fastapi import APIRouter
 from sqlalchemy import select
@@ -7,27 +7,27 @@ from src.storage.db import SessionLocal
 from src.storage.models import Execution
 
 
-router = APIRouter(prefix="/api", tags=["executions"])
+router = APIRouter(prefix="/api/security", tags=["security"])
 
 
-@router.get("/executions")
-def get_executions() -> list[dict]:
-    """Return execution history, newest first."""
+@router.get("/feed")
+def get_security_feed() -> list[dict]:
+    """Return recent executions for the security monitoring feed."""
 
     with SessionLocal() as session:
         executions = session.scalars(
-            select(Execution).order_by(Execution.created_at.desc())
+            select(Execution)
+            .order_by(Execution.created_at.desc())
+            .limit(50)
         ).all()
 
         return [
             {
                 "id": execution.id,
-                "artifact_id": execution.artifact_id,
+                "attack_type": execution.attack_type,
                 "status": execution.status,
-                "stdout": execution.stdout,
-                "stderr": execution.stderr,
                 "duration_ms": execution.duration_ms,
-		"attack_type": execution.attack_type,
+                "artifact_id": execution.artifact_id,
                 "wasm_sha256": execution.wasm_sha256,
                 "created_at": execution.created_at.isoformat(),
             }

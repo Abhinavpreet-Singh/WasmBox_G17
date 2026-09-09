@@ -1,22 +1,35 @@
-﻿from contextlib import asynccontextmanager
+﻿"""Main FastAPI application for WasmBox."""
+
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.routes.compile import router as compile_router
-from src.api.routes.health import router as health_router
-from src.api.routes.metrics import router as metrics_router
-from src.api.routes.run import router as run_router
-from src.api.routes.lint import router as lint_router
 from src.api.routes.executions import router as executions_router
-from src.api.websocket import router as ws_router
-from src.storage.db import engine
-from src.storage.models import Base
+from src.api.routes.health import router as health_router
+from src.api.routes.lint import router as lint_router
+from src.api.routes.metrics import router as metrics_router
 from src.api.routes.plugins import router as plugins_router
+from src.api.routes.run import router as run_router
+from src.api.routes.security import router as security_router
+from src.api.websocket import router as websocket_router
+from src.storage.db import Base, engine, ensure_schema
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    """
+    Initialize the database when the application starts.
+
+    create_all() creates missing tables.
+    ensure_schema() adds small schema updates, such as the
+    executions.attack_type column, to an existing database.
+    """
+
     Base.metadata.create_all(bind=engine)
+    ensure_schema()
+
     yield
 
 
@@ -26,6 +39,7 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,12 +52,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 app.include_router(health_router)
 app.include_router(compile_router)
 app.include_router(run_router)
 app.include_router(lint_router)
 app.include_router(metrics_router)
 app.include_router(executions_router)
+app.include_router(security_router)
+app.include_router(websocket_router)
 app.include_router(plugins_router)
-
-app.include_router(ws_router)
