@@ -2,57 +2,6 @@ import { useEffect, useState } from 'react';
 import PageLayout, { PageBody } from '../components/layout/PageLayout';
 import { apiGet } from '../lib/api';
 
-function HealthBadge({ status }) {
-  const styles = {
-    ok: 'bg-green-50 text-green-700 border-green-200',
-    error: 'bg-red-50 text-red-700 border-red-200',
-    loading: 'bg-neutral-50 text-neutral-500 border-neutral-200',
-  };
-  return (
-    <span className={`text-xs font-medium px-2 py-1 rounded border ${styles[status] ?? styles.loading}`}>
-      {status === 'loading' ? 'checking…' : status}
-    </span>
-  );
-}
-
-const MOCK_VIOLATIONS = [
-  { line: 3, col: 5, message: "Import of 'os' is not allowed", rule: 'blocked-import' },
-  { line: 7, col: 1, message: "Call to 'eval' is not allowed", rule: 'blocked-call' },
-  { line: 12, col: 9, message: "Import of 'subprocess' is not allowed", rule: 'blocked-import' },
-];
-
-function ViolationsTable({ violations }) {
-  if (violations.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-6 text-center text-sm text-neutral-500">
-        No violations recorded yet.
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-neutral-50 text-left text-xs text-neutral-500">
-          <tr>
-            <th className="px-4 py-2">Line:Col</th>
-            <th className="px-4 py-2">Rule</th>
-            <th className="px-4 py-2">Message</th>
-          </tr>
-        </thead>
-        <tbody>
-          {violations.map((v, i) => (
-            <tr key={i} className="border-t border-neutral-100">
-              <td className="px-4 py-2 font-mono text-xs text-neutral-500">{v.line}:{v.col}</td>
-              <td className="px-4 py-2 font-mono text-xs text-red-600">{v.rule}</td>
-              <td className="px-4 py-2 text-neutral-700">{v.message}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 function HealthRow({ label, value }) {
   return (
