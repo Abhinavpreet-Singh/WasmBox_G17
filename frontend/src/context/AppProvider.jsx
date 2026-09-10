@@ -7,7 +7,7 @@ export function AppProvider({ navigateTo, children }) {
   const [apiHealth, setApiHealth] = useState(null);
   const [tenantId, setTenantId] = useState('tenant_a');
   const [executions, setExecutions] = useState([]);
-
+  const [playgroundSource, setPlaygroundSource] = useState(null);
   useEffect(() => {
     let cancelled = false;
     apiGet('/health')
@@ -38,9 +38,11 @@ export function AppProvider({ navigateTo, children }) {
       setTenantId,
       executions,
       setExecutions,
+      playgroundSource,
+      setPlaygroundSource,
       navigateTo: navigate,
     }),
-    [wsStatus, apiHealth, tenantId, executions, navigate],
+    [wsStatus, apiHealth, tenantId, executions, playgroundSource, navigate],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
