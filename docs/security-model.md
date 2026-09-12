@@ -43,3 +43,11 @@ Document here: WASI config used, proof that socket syscalls are unavailable, and
 ## Audit log
 
 Each execution records: `tenant_id`, `plugin_version_id`, `wasm_sha256`, `duration_ms`, `status`, `capabilities`, `stdout` (truncated).
+
+## Capability Matrix
+
+| Capability | Default | Opt-in via API |
+| --- | --- | --- |
+| stdio | enabled | - |
+| db_query | disabled | allow_db_bridge=true |
+| http_fetch | disabled | allow_http_fetch=true |
