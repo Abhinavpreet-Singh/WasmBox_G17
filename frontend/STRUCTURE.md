@@ -53,3 +53,9 @@ npm run dev
 ```
 
 API must be on `http://localhost:8001`.
+
+## State Management
+
+- Local React state for UI toggles
+- Polling via setInterval for live metrics (5s refresh)
+- WebSocket for real-time plugin stdout streaming
