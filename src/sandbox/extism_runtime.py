@@ -7,7 +7,10 @@ import time
 from pathlib import Path
 
 from extism import Plugin
+from sandbox.capabilities import CapabilitySet
 
+from src.sandbox.runtime import WasmRunResult
+from src.sandbox.host_functions import build_host_functions
 from src.sandbox.runtime import WasmRunResult
 
 # Maximum wall-clock seconds an Extism plugin may run before the thread is
@@ -20,6 +23,7 @@ def run_extism_artifact(
     wasm_path: Path,
     *,
     function: str = "greet",
+    capabilities: CapabilitySet | None = None,
 ) -> WasmRunResult:
     """Execute a compiled Extism plugin artifact and return stdout-style output.
 
@@ -37,7 +41,7 @@ def run_extism_artifact(
 
     def _run() -> None:
         try:
-            plugin = Plugin(str(wasm_path), wasi=True)
+            plugin = Plugin(str(wasm_path), wasi=True, functions=build_host_functions(capabilities),)
             if not plugin.function_exists(function):
                 _result["status"] = "error"
                 _result["stderr"] = f"Plugin does not export function '{function}'"
