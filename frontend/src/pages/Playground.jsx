@@ -13,7 +13,11 @@ def greet():
 `;
 
 export default function Playground() {
-  const { setExecutions } = useApp();
+  const {
+    setExecutions,
+    playgroundSource,
+    setPlaygroundSource,
+  } = useApp();
   const [source, setSource] = useState(DEFAULT_SOURCE);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -28,6 +32,12 @@ export default function Playground() {
     editorRef.current = editor;
     monacoRef.current = monaco;
   };
+  useEffect(() => {
+    if (playgroundSource === null) return;
+
+    setSource(playgroundSource);
+    setPlaygroundSource(null);
+  }, [playgroundSource, setPlaygroundSource]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -350,13 +360,12 @@ export default function Playground() {
                   </p>
 
                   <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      result.status === 'ok'
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${result.status === 'ok'
                         ? 'bg-emerald-100 text-emerald-700'
                         : result.status === 'timeout'
                           ? 'bg-amber-100 text-amber-700'
                           : 'bg-neutral-100 text-neutral-700'
-                    }`}
+                      }`}
                   >
                     {result.status || '(no status)'}
                   </span>

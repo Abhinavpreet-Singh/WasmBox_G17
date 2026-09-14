@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import PageLayout, { PageBody } from '../components/layout/PageLayout';
+import { apiGet } from '../lib/api';
+
 
 function HealthRow({ label, value }) {
   return (
