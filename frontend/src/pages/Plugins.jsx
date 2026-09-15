@@ -4,11 +4,26 @@ export default function Plugins() {
   return (
     <PageLayout>
       <PageBody>
-        <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-8 text-center max-w-lg mx-auto">
-          <h2 className="text-sm font-semibold text-neutral-900">Plugins</h2>
-          <p className="text-sm text-neutral-500 mt-2">
-            Save, version, and webhook configuration — Week 3 Day 14–18.
-          </p>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Left panel */}
+          <section className="rounded-xl border border-neutral-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Create Plugin
+            </h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              Compile and save a Python WASM plugin.
+            </p>
+          </section>
+
+          {/* Right panel */}
+          <section className="rounded-xl border border-neutral-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Saved Plugins
+            </h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              Your compiled plugins will appear here.
+            </p>
+          </section>
         </div>
       </PageBody>
     </PageLayout>
