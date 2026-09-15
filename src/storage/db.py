@@ -1,22 +1,30 @@
 """SQLAlchemy engine, declarative base, session factory, and schema helpers."""
 
+import os
+
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 
 from src.storage.models import Base
 
 
-DATABASE_URL = "postgresql+psycopg2://wasmbox:wasmbox@localhost:5433/wasmbox"
+DATABASE_URL = os.environ.get(
+    "WASMBOX_DATABASE_URL",
+    "postgresql+psycopg2://wasmbox:wasmbox@localhost:5433/wasmbox",
+)
+
+_connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(
     DATABASE_URL,
+    connect_args=_connect_args,
     pool_pre_ping=True,
 )
 
 SessionLocal = sessionmaker(
-    bind=engine,
-    autoflush=False,
     autocommit=False,
+    autoflush=False,
+    bind=engine,
 )
 
 
