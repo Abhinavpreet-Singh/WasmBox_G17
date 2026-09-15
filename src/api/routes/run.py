@@ -9,6 +9,7 @@ from src.sandbox.compiler_client import CompilerError, compile_python
 from src.sandbox.extism_runtime import run_extism_artifact
 from src.sandbox.runtime import resolve_compiled_artifact, run_wasm
 from src.storage.repository import record_execution_result
+from src.sandbox.capabilities import CapabilitySet
 
 router = APIRouter(prefix="/api", tags=["run"])
 
@@ -18,6 +19,10 @@ class RunRequest(BaseModel):
     artifact_id: str = Field(
         default="",
         description="Compiled artifact id from POST /api/compile (loads from artifacts/)",
+    )
+    allow_db_bridge: bool = Field(
+        default=False,
+        description="Grant this execution the ALLOW_DB_BRIDGE capability (db_query host function)",
     )
 
 
@@ -93,6 +98,8 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
 
     # Existing compiled artifact execution does not contain new source code
     # to classify, so the security classification defaults to "none".
+    capabilities = CapabilitySet.from_flags(allow_db_bridge=body.allow_db_bridge)
+
     if body.artifact_id:
         record_execution()
 
@@ -109,7 +116,7 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
                 detail=str(exc),
             ) from exc
 
-        result = run_extism_artifact(wasm_path)
+        result = run_extism_artifact(wasm_path, capabilities=capabilities)
 
         record_execution_result(
             status=result.status,
@@ -191,7 +198,7 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
 
     record_execution()
 
-    result = run_extism_artifact(compiled.wasm_path)
+    result = run_extism_artifact(compiled.wasm_path, capabilities=capabilities)
 
     record_execution_result(
         status=result.status,
