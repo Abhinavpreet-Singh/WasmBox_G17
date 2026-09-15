@@ -39,6 +39,23 @@ const formatAttackType = (attackType) => {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
 
+const calculateSecurityScore = (stats) => {
+  if (!stats || stats.total_executions === undefined) {
+    return null;
+  }
+
+  const totalExecutions = Number(stats.total_executions);
+  const detectedAttacks = Number(stats.detected_attacks ?? 0);
+
+  if (totalExecutions <= 0) {
+    return 100;
+  }
+
+  const score = 100 - (detectedAttacks / totalExecutions) * 100;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+};
+
 export default function SecurityLab() {
   const [stats, setStats] = useState(null);
   const [feed, setFeed] = useState([]);
@@ -67,6 +84,14 @@ export default function SecurityLab() {
 
   useEffect(() => {
     loadSecurityData();
+
+    const refreshInterval = window.setInterval(() => {
+      loadSecurityData();
+    }, 5000);
+
+    return () => {
+      window.clearInterval(refreshInterval);
+    };
   }, [loadSecurityData]);
 
   const handleFireAttack = async (scenario) => {
@@ -111,6 +136,8 @@ export default function SecurityLab() {
 
     return 'bg-neutral-100 text-neutral-700';
   };
+
+  const securityScore = calculateSecurityScore(stats);
 
   return (
     <PageLayout>
@@ -186,6 +213,52 @@ export default function SecurityLab() {
                 </div>
               </div>
 
+              {/* Security Score */}
+              <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-neutral-900">
+                      Security Score
+                    </h3>
+
+                    <p className="mt-1 text-sm text-neutral-500">
+                      Based on detected attacks across all executions.
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-neutral-900">
+                      {loading || securityScore === null
+                        ? '—'
+                        : securityScore}
+                    </p>
+
+                    {!loading && securityScore !== null && (
+                      <p className="text-xs font-medium text-neutral-500">
+                        / 100
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-5 h-3 overflow-hidden rounded-full bg-neutral-200">
+                  <div
+                    className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                    style={{
+                      width: `${
+                        securityScore === null ? 0 : securityScore
+                      }%`,
+                    }}
+                  />
+                </div>
+
+                <div className="mt-2 flex justify-between text-xs text-neutral-400">
+                  <span>0</span>
+                  <span>50</span>
+                  <span>100</span>
+                </div>
+              </div>
+
               {/* Attack Breakdown */}
               <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
                 <h3 className="font-semibold text-neutral-900">
@@ -221,9 +294,22 @@ export default function SecurityLab() {
 
               {/* Security Feed */}
               <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-neutral-900">
-                  Security Feed
-                </h3>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-neutral-900">
+                      Security Feed
+                    </h3>
+
+                    <p className="mt-1 text-xs text-neutral-400">
+                      Automatically refreshes every 5 seconds.
+                    </p>
+                  </div>
+
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                    Live
+                  </span>
+                </div>
 
                 {feed.length === 0 ? (
                   <p className="mt-4 text-sm text-neutral-500">
@@ -250,9 +336,15 @@ export default function SecurityLab() {
                           </span>
                         </div>
 
-                        <p className="mt-1 text-xs text-neutral-500">
-                          {execution.duration_ms} ms
-                        </p>
+                        <div className="mt-1 flex items-center gap-3 text-xs text-neutral-500">
+                          <span>{execution.duration_ms} ms</span>
+
+                          {execution.artifact_id && (
+                            <span>
+                              Artifact: {execution.artifact_id}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
