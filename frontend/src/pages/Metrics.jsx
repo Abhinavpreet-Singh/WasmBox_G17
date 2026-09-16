@@ -16,16 +16,6 @@ function StatCard({ label, value, hint }) {
   );
 }
 
-function StatCard({ label, value, hint }) {
-  return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-5">
-      <p className="text-xs font-medium text-neutral-500">{label}</p>
-      <p className="text-2xl font-semibold text-neutral-900 mt-1">{value}</p>
-      {hint && <p className="text-xs text-neutral-400 mt-1 font-mono">{hint}</p>}
-    </div>
-  );
-}
-
 export default function Metrics() {
   const [stats, setStats] = useState({ timeouts: 0, oom: 0, compileErrors: 0 });
   const [status, setStatus] = useState('loading'); // loading | ok | error

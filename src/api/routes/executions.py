@@ -27,6 +27,7 @@ def get_executions() -> list[dict]:
                 "stdout": execution.stdout,
                 "stderr": execution.stderr,
                 "duration_ms": execution.duration_ms,
+		"attack_type": execution.attack_type,
                 "wasm_sha256": execution.wasm_sha256,
                 "created_at": execution.created_at.isoformat(),
             }
