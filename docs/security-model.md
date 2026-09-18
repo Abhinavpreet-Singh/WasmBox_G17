@@ -27,6 +27,10 @@
 
 Host functions are the **only** escape hatch. Initial scope:
 
+`db_query` and `http_fetch` are only registered with a plugin when the matching
+`Capability` is present in the `CapabilitySet` passed to `run_extism_artifact()`.
+`POST /api/run` exposes `allow_db_bridge: bool` so the frontend opts a specific
+execution into the DB bridge rather than it being always-on.
 - `db_query(fixture_id, sql)` — reads from in-memory fixture DB, not customer SQL
 - (P1) `http_fetch(url)` — allowlist domains only
 
