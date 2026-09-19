@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import PageLayout, { PageBody } from '../components/layout/PageLayout';
-import { GRAFANA_DASHBOARD_URL, PROMETHEUS_URL } from '../lib/observability';
+import { GRAFANA_DASHBOARD_URL, PROMETHEUS_URL, METRICS_REFRESH_INTERVAL_MS } from '../lib/observability';
 import { apiGetText } from '../lib/api';
 import { parsePrometheusText, pickStat } from '../lib/metrics';
 
-const POLL_INTERVAL_MS = 5000;
 
 function StatCard({ label, value, hint }) {
   return (
@@ -43,7 +42,7 @@ export default function Metrics() {
     }
 
     fetchMetrics();
-    const id = setInterval(fetchMetrics, POLL_INTERVAL_MS);
+    const id = setInterval(fetchMetrics, METRICS_REFRESH_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
