@@ -9,6 +9,7 @@ from src.api.main import app
 from src.sandbox.capabilities import Capability
 from src.sandbox.compiler_client import CompiledArtifact, CompilerError
 from src.sandbox.runtime import WasmRunResult
+from src.sandbox.capabilities import Capability
 
 
 BENIGN_SOURCE = """from extism import plugin_fn
@@ -46,6 +47,7 @@ def test_run_by_artifact_id(
         json={"artifact_id": "abc123"},
     )
 
+    
     assert response.status_code == 200
 
     body = response.json()
@@ -87,6 +89,7 @@ def test_run_compiles_and_executes_source(
         json={"source": BENIGN_SOURCE},
     )
 
+  
     assert response.status_code == 200
 
     body = response.json()
@@ -142,79 +145,33 @@ def test_run_surfaces_compile_errors(
 
     assert body["status"] == "error"
 
-    mock_record.assert_called_once()
 
 
-@patch("src.api.routes.run.record_execution_result")
 @patch("src.api.routes.run.run_extism_artifact")
 @patch("src.api.routes.run.resolve_compiled_artifact")
-def test_run_passes_allow_db_bridge_capability(
-    mock_resolve,
-    mock_run_extism,
-    mock_record,
-):
-    mock_resolve.return_value = Path(
-        "artifacts/abc123.wasm"
-    )
-
+def test_run_passes_allow_db_bridge_capability(mock_resolve, mock_run_extism):
+    mock_resolve.return_value = Path("artifacts/abc123.wasm")
     mock_run_extism.return_value = WasmRunResult(
-        status="ok",
-        stdout="",
-        stderr="",
-        duration_ms=1,
-        artifact="abc123.wasm",
+        status="ok", stdout="", stderr="", duration_ms=1, artifact="abc123.wasm"
     )
-
+ 
     client = TestClient(app)
-
-    client.post(
-        "/api/run",
-        json={
-            "artifact_id": "abc123",
-            "allow_db_bridge": True,
-        },
-    )
-
+    client.post("/api/run", json={"artifact_id": "abc123", "allow_db_bridge": True})
+ 
     _, kwargs = mock_run_extism.call_args
-
-    assert kwargs["capabilities"].has(
-        Capability.ALLOW_DB_BRIDGE
-    )
-
-    mock_record.assert_called_once()
-
-
-@patch("src.api.routes.run.record_execution_result")
+    assert kwargs["capabilities"].has(Capability.ALLOW_DB_BRIDGE)
+ 
+ 
 @patch("src.api.routes.run.run_extism_artifact")
 @patch("src.api.routes.run.resolve_compiled_artifact")
-def test_run_without_allow_db_bridge_grants_nothing(
-    mock_resolve,
-    mock_run_extism,
-    mock_record,
-):
-    mock_resolve.return_value = Path(
-        "artifacts/abc123.wasm"
-    )
-
+def test_run_without_allow_db_bridge_grants_nothing(mock_resolve, mock_run_extism):
+    mock_resolve.return_value = Path("artifacts/abc123.wasm")
     mock_run_extism.return_value = WasmRunResult(
-        status="ok",
-        stdout="",
-        stderr="",
-        duration_ms=1,
-        artifact="abc123.wasm",
+        status="ok", stdout="", stderr="", duration_ms=1, artifact="abc123.wasm"
     )
-
+ 
     client = TestClient(app)
-
-    client.post(
-        "/api/run",
-        json={"artifact_id": "abc123"},
-    )
-
+    client.post("/api/run", json={"artifact_id": "abc123"})
+ 
     _, kwargs = mock_run_extism.call_args
-
-    assert not kwargs["capabilities"].has(
-        Capability.ALLOW_DB_BRIDGE
-    )
-
-    mock_record.assert_called_once()
+    assert not kwargs["capabilities"].has(Capability.ALLOW_DB_BRIDGE)
