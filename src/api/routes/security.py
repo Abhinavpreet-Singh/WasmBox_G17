@@ -1,5 +1,7 @@
 """Security monitoring API routes."""
 
+from collections import Counter
+
 from fastapi import APIRouter
 from sqlalchemy import select
 
@@ -33,3 +35,44 @@ def get_security_feed() -> list[dict]:
             }
             for execution in executions
         ]
+
+
+@router.get("/stats")
+def get_security_stats() -> dict:
+    """Return security statistics for execution history."""
+
+    with SessionLocal() as session:
+        executions = session.scalars(
+            select(Execution)
+        ).all()
+
+        total_executions = len(executions)
+
+        safe_executions = sum(
+            1
+            for execution in executions
+            if execution.attack_type == "none"
+        )
+
+        detected_attacks = total_executions - safe_executions
+
+        attack_counts = Counter(
+            execution.attack_type
+            for execution in executions
+            if execution.attack_type != "none"
+        )
+
+        average_duration_ms = (
+            sum(execution.duration_ms for execution in executions)
+            / total_executions
+            if total_executions
+            else 0
+        )
+
+        return {
+            "total_executions": total_executions,
+            "safe_executions": safe_executions,
+            "detected_attacks": detected_attacks,
+            "attack_counts": dict(attack_counts),
+            "average_duration_ms": round(average_duration_ms, 2),
+        }
