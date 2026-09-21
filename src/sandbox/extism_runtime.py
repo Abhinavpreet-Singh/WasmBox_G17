@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from extism import Plugin
-from sandbox.capabilities import CapabilitySet
+from src.sandbox.capabilities import CapabilitySet
 
 from src.sandbox.runtime import WasmRunResult
 from src.sandbox.host_functions import build_host_functions
