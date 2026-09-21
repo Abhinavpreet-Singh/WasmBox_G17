@@ -9,6 +9,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from src.metrics.prometheus import record_compile_error, record_execution
 from src.sandbox.ast_guard import lint_source
 from src.security.classifier import classify_source
+from src.sandbox.capabilities import CapabilitySet
 from src.sandbox.compiler_client import CompilerError, compile_python
 from src.sandbox.extism_runtime import run_extism_artifact
 from src.sandbox.runtime import resolve_compiled_artifact, run_wasm
@@ -162,7 +163,10 @@ async def ws_executions(websocket: WebSocket) -> None:
 
                 record_execution()
 
-                result = run_extism_artifact(wasm_path)
+                capabilities = CapabilitySet.from_flags(
+                    allow_db_bridge=bool(msg.get("allow_db_bridge", False)),
+                )
+                result = run_extism_artifact(wasm_path, capabilities=capabilities)
 
                 if result.stdout:
                     await _send(
@@ -297,7 +301,10 @@ async def ws_executions(websocket: WebSocket) -> None:
 
             record_execution()
 
-            result = run_extism_artifact(compiled.wasm_path)
+            capabilities = CapabilitySet.from_flags(
+                allow_db_bridge=bool(msg.get("allow_db_bridge", False)),
+            )
+            result = run_extism_artifact(compiled.wasm_path, capabilities=capabilities)
 
             if result.stdout:
                 await _send(

@@ -1,13 +1,10 @@
 """Run Extism-compiled WASM plugins via the host SDK — Week 2 Day 8."""
-
 from __future__ import annotations
-
 import threading
 import time
 from pathlib import Path
-
 from extism import Plugin
-
+from src.sandbox.capabilities import CapabilitySet
 from src.sandbox.capabilities import CapabilitySet
 from src.sandbox.host_functions import build_host_functions
 from src.sandbox.runtime import WasmRunResult
