@@ -99,3 +99,9 @@ See [WasmBox-PROJECT.md](../WasmBox-PROJECT.md) for the full mermaid diagram and
 - Compile step averages 2-4s inside Docker
 - Wasmtime execution < 100ms for typical plugins
 - WebSocket streams stdout in real time
+
+## Multi-Tenant Isolation
+
+- Each plugin execution is scoped to a 	enant_id`r
+- DB queries are sandboxed per-tenant
+- Audit log records tenant on every run
