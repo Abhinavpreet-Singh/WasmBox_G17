@@ -51,3 +51,8 @@ Each execution records: `tenant_id`, `plugin_version_id`, `wasm_sha256`, `durati
 | stdio | enabled | - |
 | db_query | disabled | allow_db_bridge=true |
 | http_fetch | disabled | allow_http_fetch=true |
+
+## Audit Trail
+Every execution records: tenant, plugin_id, wasm_sha256, duration_ms, attack_type
+Security feed: GET /api/security/feed
+Statistics: GET /api/security/stats
