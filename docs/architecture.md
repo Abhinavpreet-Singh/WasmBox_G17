@@ -105,3 +105,8 @@ See [WasmBox-PROJECT.md](../WasmBox-PROJECT.md) for the full mermaid diagram and
 - Each plugin execution is scoped to a 	enant_id`r
 - DB queries are sandboxed per-tenant
 - Audit log records tenant on every run
+
+## Observability
+Prometheus metrics exposed at /metrics
+Grafana dashboard available on port 3002
+Key metrics: total_executions, execution_duration_ms, security_violations_total
