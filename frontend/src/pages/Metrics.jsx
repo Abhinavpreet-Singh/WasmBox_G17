@@ -68,7 +68,7 @@ export default function Metrics() {
           <div className="rounded-xl border border-neutral-200 bg-white p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Observability</h2>
             <p className="text-sm text-neutral-500 mt-1">
-              Stat cards above poll <code>/metrics</code> every {POLL_INTERVAL_MS / 1000}s. Use Grafana/Prometheus below for deeper dives.
+              Stat cards above poll <code>/metrics</code> every {METRICS_REFRESH_INTERVAL_MS / 1000}s. Use Grafana/Prometheus below for deeper dives.
             </p>
             <div className="flex gap-2 mt-4 text-xs font-mono">
               <a href={GRAFANA_DASHBOARD_URL} target="_blank" rel="noreferrer" className="px-2 py-1 rounded border border-neutral-200 hover:bg-neutral-50">
