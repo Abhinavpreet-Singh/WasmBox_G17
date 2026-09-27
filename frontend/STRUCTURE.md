@@ -59,3 +59,8 @@ API must be on `http://localhost:8001`.
 - Local React state for UI toggles
 - Polling via setInterval for live metrics (5s refresh)
 - WebSocket for real-time plugin stdout streaming
+
+## API Integration
+All API calls go through src/lib/api.js
+Base URL configured via Vite proxy to avoid CORS
+WebSocket connects to ws://localhost:8001/ws/{execution_id}
