@@ -10,3 +10,8 @@ Compile any example plugin:
 ```bash
 docker compose --profile compile run --rm compiler compile /work/hello_plugin.py -o /artifacts/hello.wasm
 ```
+
+## Available Examples
+hello_plugin.py - basic input/output
+math_plugin.py - numeric computation
+db_plugin.py - capability-gated database read (requires allow_db_bridge)
