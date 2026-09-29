@@ -56,3 +56,8 @@ Each execution records: `tenant_id`, `plugin_version_id`, `wasm_sha256`, `durati
 Every execution records: tenant, plugin_id, wasm_sha256, duration_ms, attack_type
 Security feed: GET /api/security/feed
 Statistics: GET /api/security/stats
+
+## Known Limitations
+SQLite does not support concurrent writes - use PostgreSQL in production
+Docker compiler adds ~2s cold-start latency on first compile
+WebSocket connections timeout after 30s of inactivity
