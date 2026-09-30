@@ -24,6 +24,7 @@ export default function Playground() {
   const [loading, setLoading] = useState(false);
   const [violations, setViolations] = useState([]);
   const [streamLogs, setStreamLogs] = useState([]);
+  const [allowDbBridge, setAllowDbBridge] = useState(false);
 
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
@@ -75,7 +76,7 @@ export default function Playground() {
     );
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ source }));
+      socket.send(JSON.stringify({ source, allow_db_bridge: allowDbBridge }));
     };
 
     socket.onmessage = (event) => {
@@ -252,6 +253,16 @@ export default function Playground() {
           >
             {loading ? 'Running...' : 'Run infinite_loop.wasm'}
           </button>
+
+          <label className="ml-auto flex items-center gap-1.5 text-xs font-medium text-neutral-600 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={allowDbBridge}
+              onChange={(e) => setAllowDbBridge(e.target.checked)}
+              className="h-3.5 w-3.5 accent-neutral-900"
+            />
+            Allow safe DB bridge
+          </label>
         </div>
 
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-neutral-200">

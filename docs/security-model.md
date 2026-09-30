@@ -57,3 +57,15 @@ Each execution records: `tenant_id`, `plugin_version_id`, `wasm_sha256`, `durati
 - Docker compiler adds ~2s cold-start latency on first compile
 - WebSocket connections timeout after 30s of inactivity
 - Artifact re-execution does not verify SHA-256 fingerprint (audit improvement tracked)
+| db_query | disabled | allow_db_bridge=true |
+| http_fetch | disabled | allow_http_fetch=true |
+
+## Audit Trail
+Every execution records: tenant, plugin_id, wasm_sha256, duration_ms, attack_type
+Security feed: GET /api/security/feed
+Statistics: GET /api/security/stats
+
+## Known Limitations
+SQLite does not support concurrent writes - use PostgreSQL in production
+Docker compiler adds ~2s cold-start latency on first compile
+WebSocket connections timeout after 30s of inactivity

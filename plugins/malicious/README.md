@@ -20,3 +20,10 @@ import socket
 socket.create_connection(("example.com", 80))
 ```
 Expected: AST guard rejects; WASM has no network capability.
+
+## How Attacks Are Classified
+
+Each execution attempt is classified by the security layer:
+- AST_VIOLATION — blocked at static analysis
+- RUNTIME_VIOLATION — blocked at Wasmtime execution
+- CAPABILITY_VIOLATION — blocked by capability gate

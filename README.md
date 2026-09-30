@@ -21,6 +21,27 @@ Monaco → POST /api/compile → AST guard → Docker compile → .wasm artifact
 ## What makes it unique
 
 - **Security Lab** — curated attacks with denial reasons (AST vs runtime vs capability)
+
+## Security Monitoring
+The Security Lab provides live security monitoring for WASM executions.
+
+### Live Security Threat Feed + Attack Classifier
+
+- Attack classification using `attack_type`
+- Persistent attack classification on execution records
+- Security execution feed through `GET /api/security/feed`
+- Security statistics through `GET /api/security/stats`
+- Two-column Security Lab dashboard
+- Attack scenario cards
+- Live scrolling security threat feed
+- Automatic threat feed refresh every 5 seconds
+- Color-coded Security Score percentage bar
+
+### Validation
+
+- Backend test suite: 46 passed, 1 skipped
+- Frontend production build: successful
+- Integration and WebSocket tests verified
 - **Capability matrix** — stdio only → host DB bridge → webhook; visible per plugin
 - **Compile vs run waterfall** — timing breakdown on every execution
 - **Bytecode fingerprint** — SHA-256 of `.wasm` in audit log; version rollback
@@ -100,4 +121,21 @@ This folder lives beside **[../streamforge/](../streamforge/)** (Month 1 — Kaf
 pytest tests/ -v
 ```
 
+Run with short output:
+
+```bash
+pytest tests/ -v --tb=short -q
+```
+
 `test_api_smoke.py` requires the API on `:8001` (skipped if not running).
+
+## Environment Variables
+Create a .env file at project root:
+DATABASE_URL=sqlite:///./wasmbox.db
+SECRET_KEY=your-secret-key
+COMPILER_URL=http://localhost:8002
+
+## Contributing
+Branch off main, open a PR against main
+Each feature area has its own branch (Abhinavpreet, Surya, Shifana, Meven, Simin)
+All PRs require passing tests before merge
