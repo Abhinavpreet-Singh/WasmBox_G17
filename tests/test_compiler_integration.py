@@ -8,9 +8,9 @@ from src.sandbox.compiler_client import (
     docker_available,
 )
 
-HELLO_PLUGIN = """from extism import plugin_fn
+HELLO_PLUGIN = """import extism
 
-@plugin_fn
+@extism.plugin_fn
 def greet():
     return "Hello from WasmBox!"
 """

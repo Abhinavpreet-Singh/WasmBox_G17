@@ -24,6 +24,8 @@ class CompiledArtifact:
 
 class CompilerError(Exception):
     def __init__(self, message: str, log: str = "") -> None:
+        if log:
+            message = f"{message}\nLog:\n{log}"
         super().__init__(message)
         self.log = log
 
@@ -91,6 +93,7 @@ def compile_python(source: str, *, artifacts_dir: Path | None = None) -> Compile
         suffix=".py",
         delete=False,
         encoding="utf-8",
+        newline="\n",
     ) as handle:
         handle.write(source)
         py_path = Path(handle.name)
