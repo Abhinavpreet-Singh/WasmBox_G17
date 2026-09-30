@@ -134,3 +134,8 @@ Create a .env file at project root:
 DATABASE_URL=sqlite:///./wasmbox.db
 SECRET_KEY=your-secret-key
 COMPILER_URL=http://localhost:8002
+
+## Contributing
+Branch off main, open a PR against main
+Each feature area has its own branch (Abhinavpreet, Surya, Shifana, Meven, Simin)
+All PRs require passing tests before merge
