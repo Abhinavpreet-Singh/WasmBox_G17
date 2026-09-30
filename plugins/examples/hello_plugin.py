@@ -4,4 +4,5 @@ import extism
 
 @extism.plugin_fn
 def greet():
-    return "Hello from WasmBox!"
+    extism.output_str("Hello from WasmBox!")
+

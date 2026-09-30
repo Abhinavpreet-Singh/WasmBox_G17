@@ -10,7 +10,7 @@ import extism
 
 @extism.plugin_fn
 def greet():
-    return "Hello from WasmBox!"
+    extism.output_str("Hello from WasmBox!")
 `,
   "JSON Formatter": `# JSON Formatter Template
 import extism
@@ -24,9 +24,9 @@ def format_json():
     try:
         data = json.loads(input_str)
         # Format with 4 spaces indent
-        return json.dumps(data, indent=4)
+        extism.output_str(json.dumps(data, indent=4))
     except json.JSONDecodeError:
-        return "Error: Invalid JSON"
+        extism.output_str("Error: Invalid JSON")
 `,
   "Webhook Transform": `# Webhook Transform Template
 import extism
@@ -46,7 +46,7 @@ def transform_payload():
         "timestamp": "auto-generated"
     }
     
-    return json.dumps(transformed)
+    extism.output_str(json.dumps(transformed))
 `
 };
 
@@ -485,5 +485,6 @@ export default function Playground() {
     </PageLayout>
   );
 }
+
 
 
