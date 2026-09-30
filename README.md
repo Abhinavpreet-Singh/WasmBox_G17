@@ -121,4 +121,21 @@ This folder lives beside **[../streamforge/](../streamforge/)** (Month 1 — Kaf
 pytest tests/ -v
 ```
 
+Run with short output:
+
+```bash
+pytest tests/ -v --tb=short -q
+```
+
 `test_api_smoke.py` requires the API on `:8001` (skipped if not running).
+
+## Environment Variables
+Create a .env file at project root:
+DATABASE_URL=sqlite:///./wasmbox.db
+SECRET_KEY=your-secret-key
+COMPILER_URL=http://localhost:8002
+
+## Contributing
+Branch off main, open a PR against main
+Each feature area has its own branch (Abhinavpreet, Surya, Shifana, Meven, Simin)
+All PRs require passing tests before merge

@@ -93,3 +93,20 @@ sequenceDiagram
 Prometheus scrapes `host.docker.internal:8001/metrics`. Grafana provisioning lives in `infra/grafana/`.
 
 See [WasmBox-PROJECT.md](../WasmBox-PROJECT.md) for the full mermaid diagram and daily build order.
+
+## Performance Notes
+
+- Compile step averages 2-4s inside Docker
+- Wasmtime execution < 100ms for typical plugins
+- WebSocket streams stdout in real time
+
+## Multi-Tenant Isolation
+
+- Each plugin execution is scoped to a 	enant_id`r
+- DB queries are sandboxed per-tenant
+- Audit log records tenant on every run
+
+## Observability
+Prometheus metrics exposed at /metrics
+Grafana dashboard available on port 3002
+Key metrics: total_executions, execution_duration_ms, security_violations_total
