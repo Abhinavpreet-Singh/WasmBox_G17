@@ -43,3 +43,17 @@ Document here: WASI config used, proof that socket syscalls are unavailable, and
 ## Audit log
 
 Each execution records: `tenant_id`, `plugin_version_id`, `wasm_sha256`, `duration_ms`, `status`, `capabilities`, `stdout` (truncated).
+
+## Capability Matrix
+
+| Capability | Default | Opt-in via API |
+| --- | --- | --- |
+| stdio | enabled | - |
+| db_query | disabled | `allow_db_bridge=true` |
+
+## Known Limitations
+
+- SQLite does not support concurrent writes — use PostgreSQL in production
+- Docker compiler adds ~2s cold-start latency on first compile
+- WebSocket connections timeout after 30s of inactivity
+- Artifact re-execution does not verify SHA-256 fingerprint (audit improvement tracked)

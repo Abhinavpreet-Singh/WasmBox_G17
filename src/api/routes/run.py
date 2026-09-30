@@ -116,6 +116,10 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
                 detail=str(exc),
             ) from exc
 
+        from src.sandbox.compiler_client import sha256_file
+
+        wasm_sha256 = sha256_file(wasm_path)
+
         result = run_extism_artifact(wasm_path, capabilities=capabilities)
 
         record_execution_result(
@@ -124,7 +128,7 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
             stderr=result.stderr,
             duration_ms=result.duration_ms,
             artifact_id=body.artifact_id,
-            wasm_sha256="",
+            wasm_sha256=wasm_sha256,
             attack_type="none",
         )
 
@@ -135,6 +139,7 @@ def run_plugin(body: RunRequest) -> ExecutionResult:
             duration_ms=result.duration_ms,
             artifact=result.artifact,
             artifact_id=body.artifact_id,
+            wasm_sha256=wasm_sha256,
             message="Extism plugin execution complete",
             attack_type="none",
         )
