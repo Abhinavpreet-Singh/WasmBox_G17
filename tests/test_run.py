@@ -144,6 +144,7 @@ def test_run_surfaces_compile_errors(
     body = response.json()
 
     assert body["status"] == "error"
+    assert "docker missing" in body["stderr"]
 
 
 
@@ -175,3 +176,25 @@ def test_run_without_allow_db_bridge_grants_nothing(mock_resolve, mock_run_extis
  
     _, kwargs = mock_run_extism.call_args
     assert not kwargs["capabilities"].has(Capability.ALLOW_DB_BRIDGE)
+
+
+@patch("src.api.routes.run.run_extism_artifact")
+@patch("src.api.routes.run.resolve_compiled_artifact")
+@patch("src.metrics.prometheus.record_sandbox_timeout")
+def test_timeout_increments_prometheus_counter(mock_counter, mock_resolve, mock_run):
+    from pathlib import Path
+    from src.sandbox.runtime import WasmRunResult
+    
+    mock_resolve.return_value = Path("artifacts/abc123.wasm")
+    mock_run.return_value = WasmRunResult(
+        status="timeout",
+        stdout="",
+        stderr="Timeout",
+        duration_ms=5001,
+        artifact="abc123.wasm",
+    )
+    
+    client = TestClient(app)
+    client.post("/api/run", json={"artifact_id": "abc123"})
+    
+    mock_counter.assert_called_once()
