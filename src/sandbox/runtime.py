@@ -96,7 +96,7 @@ def run_wasm(
         linker.define_wasi()
         store = Store(linker.engine)
         store.set_fuel(100_000)
-        store.set_epoch_deadline(1)
+        store.set_epoch_deadline(10)
 
         timer = threading.Timer(0.05, engine.increment_epoch)
         timer.start()

@@ -4,13 +4,53 @@ import PageLayout, { PageBody } from '../components/layout/PageLayout';
 import { apiPost } from '../lib/api';
 import { useApp } from '../hooks/useApp';
 
-const DEFAULT_SOURCE = `# WasmBox plugin (Extism PDK — Week 2)
-from extism import plugin_fn
+const TEMPLATES = {
+  "Hello World": `# WasmBox plugin (Extism PDK)
+import extism
 
-@plugin_fn
+@extism.plugin_fn
 def greet():
-    return "Hello from WasmBox!"
-`;
+    extism.output_str("Hello from WasmBox!")
+`,
+  "JSON Formatter": `# JSON Formatter Template
+import extism
+import json
+
+@extism.plugin_fn
+def format_json():
+    # Read input from host
+    input_str = extism.var.get("input") or "{\"example\": \"data\"}"
+    
+    try:
+        data = json.loads(input_str)
+        # Format with 4 spaces indent
+        extism.output_str(json.dumps(data, indent=4))
+    except json.JSONDecodeError:
+        extism.output_str("Error: Invalid JSON")
+`,
+  "Webhook Transform": `# Webhook Transform Template
+import extism
+import json
+
+@extism.plugin_fn
+def transform_payload():
+    # Example input: {"event": "push", "repository": "wasmbox"}
+    input_str = extism.var.get("input") or "{\"event\": \"ping\"}"
+    
+    data = json.loads(input_str)
+    
+    # Transform it into our internal format
+    transformed = {
+        "source": "github_webhook",
+        "action_type": data.get("event", "unknown"),
+        "timestamp": "auto-generated"
+    }
+    
+    extism.output_str(json.dumps(transformed))
+`
+};
+
+const DEFAULT_SOURCE = TEMPLATES["Hello World"];
 
 export default function Playground() {
   const {
@@ -209,6 +249,15 @@ export default function Playground() {
     <PageLayout>
       <PageBody className="!p-0 flex flex-col">
         <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-neutral-200 bg-white shrink-0">
+          <select 
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-neutral-100 text-neutral-800 border-none outline-none focus:ring-2 focus:ring-neutral-900"
+            onChange={(e) => setSource(TEMPLATES[e.target.value])}
+            defaultValue="Hello World"
+          >
+            <option value="Hello World">Hello World</option>
+            <option value="JSON Formatter">JSON Formatter</option>
+            <option value="Webhook Transform">Webhook Transform</option>
+          </select>
           <button
             type="button"
             onClick={handleRun}
@@ -436,3 +485,6 @@ export default function Playground() {
     </PageLayout>
   );
 }
+
+
+

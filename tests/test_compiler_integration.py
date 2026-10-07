@@ -8,11 +8,11 @@ from src.sandbox.compiler_client import (
     docker_available,
 )
 
-HELLO_PLUGIN = """from extism import plugin_fn
+HELLO_PLUGIN = """import extism
 
-@plugin_fn
+@extism.plugin_fn
 def greet():
-    return "Hello from WasmBox!"
+    extism.output_str("Hello from WasmBox!")
 """
 
 requires_compiler = pytest.mark.skipif(
@@ -28,3 +28,4 @@ def test_compile_hello_plugin_integration(tmp_path):
     assert artifact.artifact_id
     assert artifact.wasm_path.is_file()
     assert len(artifact.wasm_sha256) == 64
+

@@ -1,7 +1,8 @@
 # Benign hello-world plugin template (Extism PDK — compile in Week 2)
 
-from extism import plugin_fn, Host
+import extism
 
-@plugin_fn
+@extism.plugin_fn
 def greet():
-    return "Hello from WasmBox!"
+    extism.output_str("Hello from WasmBox!")
+
